@@ -1,11 +1,17 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
-// The schema is entirely optional.
-// You can delete this file (schema.ts) and the
-// app will continue to work.
-// The schema provides more precise TypeScript types.
 export default defineSchema({
+  users: defineTable({
+    email: v.string(),
+    username: v.optional(v.string()),
+    occupation: v.optional(v.string()),
+    mobileNumber: v.optional(v.string()),
+    websiteLink: v.optional(v.string()),
+  })
+    .index("by_email", ["email"])
+    .index("by_username", ["username"]),
+
   numbers: defineTable({
     value: v.number(),
   }),
