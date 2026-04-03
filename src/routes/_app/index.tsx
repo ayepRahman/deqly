@@ -1,192 +1,320 @@
-"use client";
+import { createFileRoute } from '@tanstack/react-router'
+import { useMutation, useQuery } from 'convex/react'
+import useEmblaCarousel from 'embla-carousel-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { AddCardIcon } from '~/components/cards/card-icons'
+import { EmptyCardPlaceholder } from '~/components/cards/empty-card-placeholder'
+import { ShowcaseCard } from '~/components/cards/showcase-card'
+import { StoryCard } from '~/components/cards/story-card'
+import {
+  type CardData,
+  DEFAULT_CARD_COLOR,
+  MAX_CARDS,
+  type ShowcaseEditForm,
+  type StoryEditForm,
+} from '~/components/cards/types'
+import { SelectCardTypeDialog } from '~/components/forms/select-card-type-dialog'
+import { Button } from '~/components/ui/button'
+import { ProfileDropdown } from '~/components/ui/profile-dropdown'
+import { api } from '../../../convex/_generated/api'
+import type { Id } from '../../../convex/_generated/dataModel'
 
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
-import { useState, useEffect } from "react";
-import { authClient } from "~/lib/auth-client";
-import { useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-
-export const Route = createFileRoute("/_app/")({
+export const Route = createFileRoute('/_app/')({
   component: AppHome,
-});
+})
 
 function AppHome() {
-  const router = useRouter();
-  const { data: session } = authClient.useSession();
-  const currentUser = useQuery(api.auth.getCurrentUser);
-  const updateProfile = useMutation(api.users.updateProfile);
+  const currentUser = useQuery(api.auth.getCurrentUser)
+  const cards = useQuery(api.cards.listMyCards) ?? []
 
-  const [username, setUsername] = useState("");
-  const [occupation, setOccupation] = useState("");
-  const [mobileNumber, setMobileNumber] = useState("");
-  const [websiteLink, setWebsiteLink] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const createCard = useMutation(api.cards.createCard)
+  const updateCard = useMutation(api.cards.updateCard)
+  const deleteCard = useMutation(api.cards.deleteCard)
+  const updateCardImage = useMutation(api.cards.updateCardImage)
 
-  const needsProfile = currentUser && !currentUser.username;
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [editingCardId, setEditingCardId] = useState<Id<'cards'> | null>(null)
+  const [showcaseEditForm, setShowcaseEditForm] = useState<ShowcaseEditForm>({
+    name: '',
+    description: '',
+    color: DEFAULT_CARD_COLOR.hex,
+  })
+  const [storyEditForm, setStoryEditForm] = useState<StoryEditForm>({
+    storyBlocks: [{ title: '', subheader: '', description: '' }],
+    color: DEFAULT_CARD_COLOR.hex,
+  })
+  const [isUploading, setIsUploading] = useState(false)
+  const [addCardDialogOpen, setAddCardDialogOpen] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const uploadTargetCardId = useRef<Id<'cards'> | null>(null)
+
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: 'center',
+    dragFree: false,
+  })
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return
+    setActiveIndex(emblaApi.selectedScrollSnap())
+  }, [emblaApi])
 
   useEffect(() => {
-    if (needsProfile) {
-      const stored = localStorage.getItem("deqly_signup_profile");
-      if (stored) {
-        try {
-          const profile = JSON.parse(stored);
-          setUsername(profile.username ?? "");
-          setOccupation(profile.occupation ?? "");
-          setMobileNumber(profile.mobileNumber ?? "");
-          setWebsiteLink(profile.websiteLink ?? "");
-        } catch {
-          // ignore parse errors
-        }
-      }
-    } else if (currentUser) {
-      setUsername(currentUser.username ?? "");
-      setOccupation(currentUser.occupation ?? "");
-      setMobileNumber(currentUser.mobileNumber ?? "");
-      setWebsiteLink(currentUser.websiteLink ?? "");
+    if (!emblaApi) return
+    emblaApi.on('select', onSelect)
+    return () => {
+      emblaApi.off('select', onSelect)
     }
-  }, [currentUser, needsProfile]);
+  }, [emblaApi, onSelect])
 
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
+const handleAddCard = async (type: 'showcase' | 'story') => {
+    if (cards.length >= MAX_CARDS) return
     try {
-      await updateProfile({
-        username,
-        occupation: occupation || undefined,
-        mobileNumber: mobileNumber || undefined,
-        websiteLink: websiteLink || undefined,
-      });
-      localStorage.removeItem("deqly_signup_profile");
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to save profile");
-    } finally {
-      setSaving(false);
+      await createCard({
+        type,
+        name: type === 'showcase' ? (currentUser?.name ?? '') : undefined,
+      })
+    } catch (_err) {
+      // Card creation failed
     }
-  };
+  }
 
-  const handleSignOut = async () => {
-    await authClient.signOut();
-    router.navigate({ to: "/login" });
-  };
+  const handleStartEdit = (card: CardData) => {
+    setEditingCardId(card._id)
+    if (card.type === 'story') {
+      setStoryEditForm({
+        storyBlocks: (
+          card.storyBlocks ?? [{ title: '', subheader: '', description: '' }]
+        ).map((b) => ({
+          title: b.title,
+          subheader: b.subheader ?? '',
+          description: b.description ?? '',
+        })),
+        color: card.color ?? DEFAULT_CARD_COLOR.hex,
+      })
+    } else {
+      setShowcaseEditForm({
+        name: card.name ?? '',
+        description: card.description ?? '',
+        color: card.color ?? DEFAULT_CARD_COLOR.hex,
+      })
+    }
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingCardId) return
+    const card = cards.find((c) => c._id === editingCardId)
+    try {
+      if (card?.type === 'story') {
+        await updateCard({
+          cardId: editingCardId,
+          storyBlocks: storyEditForm.storyBlocks.map((b) => ({
+            title: b.title,
+            subheader: b.subheader || undefined,
+            description: b.description || undefined,
+          })),
+          color: storyEditForm.color,
+        })
+      } else {
+        await updateCard({
+          cardId: editingCardId,
+          name: showcaseEditForm.name || undefined,
+          description: showcaseEditForm.description || undefined,
+          color: showcaseEditForm.color,
+        })
+      }
+      setEditingCardId(null)
+    } catch (_err) {
+      // Update failed
+    }
+  }
+
+  const handleCancelEdit = () => setEditingCardId(null)
+
+  const handleDeleteCard = async (cardId: Id<'cards'>) => {
+    try {
+      await deleteCard({ cardId })
+      if (activeIndex >= cards.length - 1 && activeIndex > 0) {
+        setActiveIndex(activeIndex - 1)
+      }
+    } catch (_err) {
+      // Delete failed
+    }
+  }
+
+  const handleAddBlock = (card: CardData) => {
+    handleStartEdit(card)
+    setStoryEditForm({
+      storyBlocks: [
+        ...(
+          card.storyBlocks ?? [{ title: '', subheader: '', description: '' }]
+        ).map((b) => ({
+          title: b.title,
+          subheader: b.subheader ?? '',
+          description: b.description ?? '',
+        })),
+        { title: '', subheader: '', description: '' },
+      ],
+      color: card.color ?? DEFAULT_CARD_COLOR.hex,
+    })
+  }
+
+  const handleImageClick = (cardId: Id<'cards'>) => {
+    uploadTargetCardId.current = cardId
+    fileInputRef.current?.click()
+  }
+
+  const handleImageUpload = async (file: File, cardId: Id<'cards'>) => {
+    setIsUploading(true)
+    try {
+      const res = await fetch('/api/upload/image')
+      if (!res.ok) throw new Error('Failed to get upload URL')
+      const { uploadURL, id } = (await res.json()) as {
+        uploadURL: string
+        id: string
+      }
+      const form = new FormData()
+      form.append('file', file)
+      const uploadRes = await fetch(uploadURL, { method: 'POST', body: form })
+      if (!uploadRes.ok) throw new Error('Upload failed')
+      await updateCardImage({ cardId, imageId: id })
+    } catch (_err) {
+      // Upload failed
+    } finally {
+      setIsUploading(false)
+    }
+  }
 
   if (currentUser === undefined) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <p className="text-neutral-400">Loading...</p>
       </div>
-    );
+    )
+  }
+
+  const sharedCardProps = {
+    editingCardId,
+    onStartEdit: handleStartEdit,
+    onSaveEdit: handleSaveEdit,
+    onCancelEdit: handleCancelEdit,
+    onDeleteCard: handleDeleteCard,
+  }
+
+  function renderCard(card: CardData, index: number) {
+    if (card.type === 'story') {
+      return (
+        <StoryCard
+          key={card._id}
+          card={card}
+          index={index}
+          total={cards.length}
+          storyEditForm={storyEditForm}
+          onStoryFormChange={setStoryEditForm}
+          onAddBlock={handleAddBlock}
+          {...sharedCardProps}
+        />
+      )
+    }
+    return (
+      <ShowcaseCard
+        key={card._id}
+        card={card}
+        index={index}
+        total={cards.length}
+        isUploading={isUploading}
+        showcaseEditForm={showcaseEditForm}
+        onImageClick={() => handleImageClick(card._id)}
+        onShowcaseFormChange={setShowcaseEditForm}
+        {...sharedCardProps}
+      />
+    )
   }
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="max-w-lg mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold">
-            {needsProfile ? "Complete your profile" : "Your Profile"}
-          </h1>
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-          >
-            Sign out
-          </button>
+    <div className="min-h-screen bg-white px-6 py-8 flex flex-col items-center">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={async (e) => {
+          const file = e.target.files?.[0]
+          const targetId = uploadTargetCardId.current
+          if (file && targetId) {
+            await handleImageUpload(file, targetId)
+          }
+          e.target.value = ''
+        }}
+      />
+
+      <div className="w-80">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-10">
+          <div>
+            <h1 className="text-2xl font-bold text-black">Create A Deqly</h1>
+            <p className="text-xs text-black mt-0.5">
+              Showcase yourself in {MAX_CARDS} cards
+            </p>
+          </div>
+          <ProfileDropdown />
         </div>
 
-        {session?.user && (
-          <p className="text-sm text-gray-500 mb-6">
-            Signed in as {session.user.email}
-          </p>
+        {/* Cards */}
+        {cards.length === 0 ? (
+          <EmptyCardPlaceholder onGetStarted={() => setAddCardDialogOpen(true)} />
+        ) : cards.length === 1 ? (
+          renderCard(cards[0], 0)
+        ) : (
+          <div className="-mx-1">
+            <div ref={emblaRef} className="">
+              <div className="flex gap-4">
+                {cards.map((card, i) => (
+                  <div key={card._id} className="flex-none w-80">
+                    {renderCard(card, i)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         )}
 
-        <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
-          <div>
-            <label
-              htmlFor="username"
-              className="block text-sm font-medium mb-1.5"
-            >
-              Username / Handle *
-            </label>
-            <input
-              id="username"
-              type="text"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="onlyayep"
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
-            />
-            {username && (
-              <p className="text-xs text-gray-400 mt-1">
-                Your public profile: deqly.com/{username}
-              </p>
-            )}
+        {/* Dot navigation */}
+        {cards.length > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-4">
+            {cards.map((card, i) => (
+              <Button
+                key={card._id}
+                onClick={() => emblaApi?.scrollTo(i)}
+                variant="ghost"
+                className={`w-2 h-2 p-0 min-w-0 rounded-full transition-colors hover:bg-transparent ${
+                  i === activeIndex ? 'bg-neutral-700' : 'bg-neutral-300'
+                }`}
+              />
+            ))}
           </div>
+        )}
 
-          <div>
-            <label
-              htmlFor="occupation"
-              className="block text-sm font-medium mb-1.5"
+        {/* Add Card */}
+        {cards.length < MAX_CARDS && (
+          <>
+            <Button
+              onClick={() => setAddCardDialogOpen(true)}
+              variant="ghost"
+              className="flex flex-col items-center gap-2 w-full py-4 mt-2 h-auto hover:bg-transparent"
             >
-              Occupation
-            </label>
-            <input
-              id="occupation"
-              type="text"
-              value={occupation}
-              onChange={(e) => setOccupation(e.target.value)}
-              placeholder="Software Engineer"
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
+              <AddCardIcon />
+              <span className="text-neutral-400 text-sm">Add Card</span>
+            </Button>
+            <SelectCardTypeDialog
+              open={addCardDialogOpen}
+              onOpenChange={setAddCardDialogOpen}
+              onCreate={handleAddCard}
             />
-          </div>
-
-          <div>
-            <label
-              htmlFor="mobileNumber"
-              className="block text-sm font-medium mb-1.5"
-            >
-              Mobile Number
-            </label>
-            <input
-              id="mobileNumber"
-              type="tel"
-              value={mobileNumber}
-              onChange={(e) => setMobileNumber(e.target.value)}
-              placeholder="+65 9123 4567"
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="websiteLink"
-              className="block text-sm font-medium mb-1.5"
-            >
-              Website
-            </label>
-            <input
-              id="websiteLink"
-              type="url"
-              value={websiteLink}
-              onChange={(e) => setWebsiteLink(e.target.value)}
-              placeholder="https://yoursite.com"
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={saving || !username}
-            className="w-full py-2.5 px-4 rounded-lg bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-200 disabled:opacity-50 transition-colors"
-          >
-            {saving ? "Saving..." : saved ? "Saved!" : "Save profile"}
-          </button>
-        </form>
+          </>
+        )}
       </div>
+
     </div>
-  );
+  )
 }
