@@ -1,5 +1,5 @@
-import { Pencil, Share2, Trash2, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Link, Pencil, Share2, Trash2, Upload, X } from 'lucide-react'
+import { useCallback, useMemo, useState } from 'react'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { generateVCard } from '~/lib/vcard'
 import { Button } from '../ui/button'
@@ -17,6 +17,7 @@ import { FlipCard } from './flip-card'
 import {
   type CardData,
   DEFAULT_CARD_COLOR,
+  getProfileUrl,
   MAX_DESCRIPTION,
   MAX_STORY_BLOCKS,
   type StoryEditForm,
@@ -27,24 +28,26 @@ interface StoryCardProps {
   card: CardData
   index: number
   total: number
-  editingCardId: Id<'cards'> | null
-  storyEditForm: StoryEditForm
+  editingCardId?: Id<'cards'> | null
+  storyEditForm?: StoryEditForm
   userData: UserData | null | undefined
-  onStartEdit: (card: CardData) => void
-  onSaveEdit: () => void
-  onCancelEdit: () => void
-  onDeleteCard: (id: Id<'cards'>) => void
-  onStoryFormChange: (form: StoryEditForm) => void
-  onAddBlock: (card: CardData) => void
+  readOnly?: boolean
+  onStartEdit?: (card: CardData) => void
+  onSaveEdit?: () => void
+  onCancelEdit?: () => void
+  onDeleteCard?: (id: Id<'cards'>) => void
+  onStoryFormChange?: (form: StoryEditForm) => void
+  onAddBlock?: (card: CardData) => void
 }
 
 export function StoryCard({
   card,
   index,
   total,
-  editingCardId,
+  editingCardId = null,
   storyEditForm,
   userData,
+  readOnly = false,
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
@@ -55,12 +58,33 @@ export function StoryCard({
   const isEditing = editingCardId === card._id
   const blocks = card.storyBlocks ?? []
   const canAddBlock = blocks.length < MAX_STORY_BLOCKS
-  const accentColor = isEditing
+  const accentColor = isEditing && storyEditForm
     ? storyEditForm.color
     : (card.color ?? DEFAULT_CARD_COLOR.hex)
 
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const profileUrl = getProfileUrl(userData?.username)
+
+  const handleCopyLink = useCallback(async () => {
+    if (!profileUrl) return
+    await navigator.clipboard.writeText(profileUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }, [profileUrl])
+
+  const handleNativeShare = useCallback(async () => {
+    if (!profileUrl) return
+    if (navigator.share) {
+      await navigator.share({ url: profileUrl })
+    } else {
+      await navigator.clipboard.writeText(profileUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }, [profileUrl])
 
   if (isEditing && isFlipped) {
     setIsFlipped(false)
@@ -85,6 +109,7 @@ export function StoryCard({
     field: keyof StoryEditForm['storyBlocks'][number],
     value: string,
   ) => {
+    if (!storyEditForm || !onStoryFormChange) return
     const updated = storyEditForm.storyBlocks.map((b, idx) =>
       idx === i ? { ...b, [field]: value } : b,
     )
@@ -92,6 +117,7 @@ export function StoryCard({
   }
 
   const removeBlock = (i: number) => {
+    if (!storyEditForm || !onStoryFormChange) return
     onStoryFormChange({
       ...storyEditForm,
       storyBlocks: storyEditForm.storyBlocks.filter((_, idx) => idx !== i),
@@ -107,31 +133,33 @@ export function StoryCard({
       <div className="px-4 pt-5 pb-6 flex flex-col gap-4 min-h-[576px] relative z-[1]">
         {/* Top bar: edit left | counter center | trash right */}
         <div className="relative flex items-center justify-center h-8">
-          <div className="absolute left-0">
-            {isEditing ? (
-              <Button
-                onClick={onCancelEdit}
-                variant="ghost"
-                size="icon-sm"
-                className="text-white/60 hover:text-white hover:bg-transparent"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            ) : (
-              <Button
-                onClick={() => onStartEdit(card)}
-                variant="ghost"
-                size="icon-sm"
-                className="text-white/80 hover:text-white hover:bg-transparent"
-              >
-                <Pencil className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
+          {!readOnly && (
+            <div className="absolute left-0">
+              {isEditing ? (
+                <Button
+                  onClick={onCancelEdit}
+                  variant="ghost"
+                  size="icon-sm"
+                  className="text-white/60 hover:text-white hover:bg-transparent"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => onStartEdit?.(card)}
+                  variant="ghost"
+                  size="icon-sm"
+                  className="text-white/80 hover:text-white hover:bg-transparent"
+                >
+                  <Pencil className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          )}
           <span className="text-neutral-200 text-sm font-medium">
             {index + 1}/{total}
           </span>
-          {!isEditing && (
+          {!readOnly && !isEditing && (
             <div className="absolute right-0">
               <Button
                 onClick={() => setConfirmDelete(true)}
@@ -146,7 +174,7 @@ export function StoryCard({
         </div>
 
         {/* Blocks */}
-        {isEditing ? (
+        {isEditing && storyEditForm && onStoryFormChange ? (
           <div className="flex flex-col gap-5">
             {storyEditForm.storyBlocks.map((block, i) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: blocks have no stable id
@@ -233,9 +261,9 @@ export function StoryCard({
               </div>
             ))}
 
-            {canAddBlock && (
+            {canAddBlock && !readOnly && (
               <Button
-                onClick={() => onAddBlock(card)}
+                onClick={() => onAddBlock?.(card)}
                 variant="ghost"
                 className="flex flex-col items-center gap-1 py-2 h-auto opacity-60 hover:opacity-100 hover:bg-transparent"
               >
@@ -263,26 +291,40 @@ export function StoryCard({
         }
       />
 
-      {!isFlipped && (
-        <div className="flex gap-3 mt-4 w-80">
-          {isEditing ? (
-            <Button onClick={onSaveEdit} className="bg-brand-teal flex-1" size="lg">
-              Save Changes
+      <div className="flex justify-center gap-7 mt-4 w-80">
+        {isFlipped ? (
+          <>
+            <button type="button" onClick={handleCopyLink} className="flex flex-col items-center gap-1 w-16">
+              <Link className="w-7 h-7 text-neutral-700" />
+              <span className="text-sm text-black">{copied ? 'Copied!' : 'Copy link'}</span>
+            </button>
+            <button type="button" onClick={handleNativeShare} className="flex flex-col items-center gap-1 w-16">
+              <Upload className="w-7 h-7 text-neutral-700" />
+              <span className="text-sm text-black">Share</span>
+            </button>
+          </>
+        ) : isEditing ? (
+          <Button onClick={onSaveEdit} className="bg-brand-teal flex-1" size="lg">
+            Save Changes
+          </Button>
+        ) : readOnly ? (
+          <Button onClick={() => setIsFlipped(true)} className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5" size="lg">
+            <Share2 className="w-4 h-4" />
+            Share
+          </Button>
+        ) : (
+          <>
+            <Button onClick={() => setIsFlipped(true)} className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5" size="lg">
+              <Share2 className="w-4 h-4" />
+              Share
             </Button>
-          ) : (
-            <>
-              <Button onClick={() => setIsFlipped(true)} className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5" size="lg">
-                <Share2 className="w-4 h-4" />
-                Share
-              </Button>
-              <Button onClick={() => onStartEdit(card)} className="flex-1 bg-brand-teal hover:bg-teal-600 gap-1.5" size="lg">
-                <Pencil className="w-4 h-4" />
-                Edit
-              </Button>
-            </>
-          )}
-        </div>
-      )}
+            <Button onClick={() => onStartEdit?.(card)} className="flex-1 bg-brand-teal hover:bg-teal-600 gap-1.5" size="lg">
+              <Pencil className="w-4 h-4" />
+              Edit
+            </Button>
+          </>
+        )}
+      </div>
 
       <Dialog
         open={confirmDelete}
@@ -299,7 +341,7 @@ export function StoryCard({
             </Button>
             <Button
               onClick={() => {
-                onDeleteCard(card._id)
+                onDeleteCard?.(card._id)
                 setConfirmDelete(false)
               }}
               className="bg-red-500 hover:bg-red-600 text-white"

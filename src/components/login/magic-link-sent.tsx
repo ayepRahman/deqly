@@ -8,7 +8,7 @@ interface MagicLinkSentProps {
 
 export function MagicLinkSent({ email, onReset }: MagicLinkSentProps) {
   return (
-    <div className="min-h-dvh bg-white flex flex-col">
+    <div className="relative isolate min-h-dvh bg-white flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center px-8">
         <div className="text-6xl mb-6">&#9993;</div>
         <h2 className="text-2xl font-bold mb-3 text-center">

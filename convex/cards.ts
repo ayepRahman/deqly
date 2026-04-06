@@ -24,6 +24,17 @@ export const listMyCards = query({
   },
 })
 
+export const listByUserId = query({
+  args: { userId: v.id('users') },
+  handler: async (ctx, args) => {
+    const cards = await ctx.db
+      .query('cards')
+      .withIndex('by_userId', (q) => q.eq('userId', args.userId))
+      .collect()
+    return cards.sort((a, b) => a.order - b.order)
+  },
+})
+
 export const createCard = mutation({
   args: {
     type: v.union(v.literal('showcase'), v.literal('story')),

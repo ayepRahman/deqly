@@ -54,6 +54,11 @@ export interface StoryEditForm {
   color: string
 }
 
+export function getProfileUrl(username?: string) {
+  if (!username || typeof window === 'undefined') return null
+  return `${window.location.origin}/${username}`
+}
+
 export interface ProfileEditForm {
   name: string
   occupation: string

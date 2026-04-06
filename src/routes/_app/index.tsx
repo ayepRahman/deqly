@@ -16,6 +16,7 @@ import {
 } from '~/components/cards/types'
 import { ImageCropDialog } from '~/components/forms/image-crop-dialog'
 import { SelectCardTypeDialog } from '~/components/forms/select-card-type-dialog'
+import { PageFooter } from '~/components/login/page-footer'
 import { Button } from '~/components/ui/button'
 import { ProfileDropdown } from '~/components/ui/profile-dropdown'
 import { api } from '../../../convex/_generated/api'
@@ -25,9 +26,7 @@ export const Route = createFileRoute('/_app/')({
   component: AppHome,
 })
 
-type UploadTarget =
-  | { type: 'profile' }
-  | { type: 'card'; cardId: Id<'cards'> }
+type UploadTarget = { type: 'profile' } | { type: 'card'; cardId: Id<'cards'> }
 
 function AppHome() {
   const currentUser = useQuery(api.auth.getCurrentUser)
@@ -226,10 +225,7 @@ function AppHome() {
     fileInputRef.current?.click()
   }
 
-  const handleImageUpload = async (
-    file: File,
-    target: UploadTarget,
-  ) => {
+  const handleImageUpload = async (file: File, target: UploadTarget) => {
     setIsUploading(true)
     try {
       const { uploadURL, id } = await getUploadUrl({})
@@ -324,7 +320,7 @@ function AppHome() {
   )
 
   return (
-    <div className="min-h-screen bg-white px-6 py-8 flex flex-col items-center overflow-x-hidden">
+    <div className="relative isolate min-h-screen bg-white flex flex-col overflow-x-hidden">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -352,79 +348,83 @@ function AppHome() {
         }}
       />
 
-      <div className="w-80">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-10">
-          <div>
-            <h1 className="text-2xl font-bold text-black">Create A Deqly</h1>
-            <p className="text-xs text-black mt-0.5">
-              Showcase yourself in {MAX_CARDS} cards
-            </p>
+      <div className="flex-1 px-6 py-8 flex flex-col items-center">
+        <div className="w-80">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-10">
+            <div>
+              <h1 className="text-2xl font-bold text-black">Create A Deqly</h1>
+              <p className="text-xs text-black mt-0.5">
+                Showcase yourself in {MAX_CARDS} cards
+              </p>
+            </div>
+            <ProfileDropdown />
           </div>
-          <ProfileDropdown />
-        </div>
 
-        {/* Cards */}
-        {totalCards === 1 ? (
-          profileCard
-        ) : (
-          <div className="-mx-1">
-            <div ref={emblaRef}>
-              <div className="flex gap-4">
-                <div className="flex-none w-80">{profileCard}</div>
-                {cards.map((card, i) => (
-                  <div key={card._id} className="flex-none w-80">
-                    {renderCard(card, i + 1)}
-                  </div>
-                ))}
+          {/* Cards */}
+          {totalCards === 1 ? (
+            profileCard
+          ) : (
+            <div className="-mx-1">
+              <div ref={emblaRef}>
+                <div className="flex gap-4">
+                  <div className="flex-none w-80">{profileCard}</div>
+                  {cards.map((card, i) => (
+                    <div key={card._id} className="flex-none w-80">
+                      {renderCard(card, i + 1)}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Dot navigation */}
-        {totalCards > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-4">
-            <Button
-              key="profile"
-              onClick={() => emblaApi?.scrollTo(0)}
-              variant="ghost"
-              className={`w-2 h-2 p-0 min-w-0 rounded-full transition-colors hover:bg-transparent ${
-                0 === activeIndex ? 'bg-neutral-700' : 'bg-neutral-300'
-              }`}
-            />
-            {cards.map((card, i) => (
+          {/* Dot navigation */}
+          {totalCards > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-4">
               <Button
-                key={card._id}
-                onClick={() => emblaApi?.scrollTo(i + 1)}
+                key="profile"
+                onClick={() => emblaApi?.scrollTo(0)}
                 variant="ghost"
                 className={`w-2 h-2 p-0 min-w-0 rounded-full transition-colors hover:bg-transparent ${
-                  i + 1 === activeIndex ? 'bg-neutral-700' : 'bg-neutral-300'
+                  0 === activeIndex ? 'bg-neutral-700' : 'bg-neutral-300'
                 }`}
               />
-            ))}
-          </div>
-        )}
+              {cards.map((card, i) => (
+                <Button
+                  key={card._id}
+                  onClick={() => emblaApi?.scrollTo(i + 1)}
+                  variant="ghost"
+                  className={`w-2 h-2 p-0 min-w-0 rounded-full transition-colors hover:bg-transparent ${
+                    i + 1 === activeIndex ? 'bg-neutral-700' : 'bg-neutral-300'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
 
-        {/* Add Card */}
-        {cards.length < MAX_CARDS && (
-          <>
-            <Button
-              onClick={() => setAddCardDialogOpen(true)}
-              variant="ghost"
-              className="flex flex-col items-center gap-2 w-full py-4 mt-2 h-auto hover:bg-transparent"
-            >
-              <AddCardIcon />
-              <span className="text-neutral-400 text-sm">Add Card</span>
-            </Button>
-            <SelectCardTypeDialog
-              open={addCardDialogOpen}
-              onOpenChange={setAddCardDialogOpen}
-              onCreate={handleAddCard}
-            />
-          </>
-        )}
+          {/* Add Card */}
+          {cards.length < MAX_CARDS && (
+            <>
+              <Button
+                onClick={() => setAddCardDialogOpen(true)}
+                variant="ghost"
+                className="flex flex-col items-center gap-2 w-full py-4 mt-2 h-auto hover:bg-transparent"
+              >
+                <AddCardIcon />
+                <span className="text-neutral-400 text-sm">Add Card</span>
+              </Button>
+              <SelectCardTypeDialog
+                open={addCardDialogOpen}
+                onOpenChange={setAddCardDialogOpen}
+                onCreate={handleAddCard}
+              />
+            </>
+          )}
+        </div>
       </div>
+
+      <PageFooter />
     </div>
   )
 }

@@ -21,7 +21,7 @@ export function LoginView({ loading, error, onSubmit }: LoginViewProps) {
   })
 
   return (
-    <div className="min-h-dvh bg-white flex flex-col">
+    <div className="relative isolate min-h-dvh bg-white flex flex-col">
       <div className="flex-1 flex flex-col items-center px-8 pt-16">
         <p className="text-base font-medium text-black mb-2">Welcome to</p>
         <img src="/logo.svg" alt="Deqly" className="h-12 mb-6" />

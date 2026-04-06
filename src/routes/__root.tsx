@@ -10,6 +10,7 @@ import {
 } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import type * as React from 'react'
+import { NotFoundView } from '~/components/not-found-view'
 import { authClient } from '~/lib/auth-client'
 import { getToken } from '~/lib/auth-server'
 import appCss from '~/styles/app.css?url'
@@ -63,7 +64,12 @@ export const Route = createRootRouteWithContext<{
       token,
     }
   },
-  notFoundComponent: () => <div>Route not found</div>,
+  notFoundComponent: () => (
+    <NotFoundView
+      title="Page not found"
+      message="The page you're looking for doesn't exist."
+    />
+  ),
   component: RootComponent,
 })
 

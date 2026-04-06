@@ -39,7 +39,7 @@ export function SignUpView({
   })
 
   return (
-    <div className="min-h-dvh bg-white flex flex-col">
+    <div className="relative isolate min-h-dvh bg-white flex flex-col">
       <div className="flex-1 px-8 pt-12 pb-8 max-w-lg mx-auto w-full">
         <img src="/logo.svg" alt="Deqly" className="h-8 mb-8" />
 
