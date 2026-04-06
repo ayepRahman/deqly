@@ -10,7 +10,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
   return (
     <div className="flex flex-col gap-2">
       <span className="text-white/60 text-xs">Choose Card Colour</span>
-      <div className="flex items-center gap-2.5 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap justify-center">
         {CARD_COLORS.map((color) => (
           <Button
             key={color.id}

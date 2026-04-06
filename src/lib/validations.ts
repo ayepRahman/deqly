@@ -37,6 +37,21 @@ export const signUpSchema = z.object({
 
 export type SignUpValues = z.infer<typeof signUpSchema>
 
+export const onboardingSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  username: z
+    .string()
+    .min(3, 'Username must be at least 3 characters')
+    .regex(/^[a-z0-9_]+$/, 'Only lowercase letters, numbers, and underscores'),
+  occupation: z.string().optional(),
+  mobileNumber: z.string().optional(),
+  addMobileToCard: z.boolean(),
+  websiteLink: optionalUrl,
+  addWebsiteToCard: z.boolean(),
+})
+
+export type OnboardingValues = z.infer<typeof onboardingSchema>
+
 export const profileSchema = z.object({
   name: z.string().optional(),
   username: z
@@ -45,7 +60,9 @@ export const profileSchema = z.object({
     .regex(/^[a-z0-9_]+$/, 'Only lowercase letters, numbers, and underscores'),
   occupation: z.string().optional(),
   mobileNumber: z.string().optional(),
+  addMobileToCard: z.boolean(),
   websiteLink: optionalUrl,
+  addWebsiteToCard: z.boolean(),
 })
 
 export type ProfileValues = z.infer<typeof profileSchema>

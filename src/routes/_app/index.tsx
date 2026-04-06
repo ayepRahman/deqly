@@ -1,18 +1,20 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useMutation, useQuery } from 'convex/react'
+import { useAction, useMutation, useQuery } from 'convex/react'
 import useEmblaCarousel from 'embla-carousel-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AddCardIcon } from '~/components/cards/card-icons'
-import { EmptyCardPlaceholder } from '~/components/cards/empty-card-placeholder'
+import { ProfileCard } from '~/components/cards/profile-card'
 import { ShowcaseCard } from '~/components/cards/showcase-card'
 import { StoryCard } from '~/components/cards/story-card'
 import {
   type CardData,
   DEFAULT_CARD_COLOR,
   MAX_CARDS,
+  type ProfileEditForm,
   type ShowcaseEditForm,
   type StoryEditForm,
 } from '~/components/cards/types'
+import { ImageCropDialog } from '~/components/forms/image-crop-dialog'
 import { SelectCardTypeDialog } from '~/components/forms/select-card-type-dialog'
 import { Button } from '~/components/ui/button'
 import { ProfileDropdown } from '~/components/ui/profile-dropdown'
@@ -23,6 +25,10 @@ export const Route = createFileRoute('/_app/')({
   component: AppHome,
 })
 
+type UploadTarget =
+  | { type: 'profile' }
+  | { type: 'card'; cardId: Id<'cards'> }
+
 function AppHome() {
   const currentUser = useQuery(api.auth.getCurrentUser)
   const cards = useQuery(api.cards.listMyCards) ?? []
@@ -31,11 +37,24 @@ function AppHome() {
   const updateCard = useMutation(api.cards.updateCard)
   const deleteCard = useMutation(api.cards.deleteCard)
   const updateCardImage = useMutation(api.cards.updateCardImage)
+  const updateProfileCardMutation = useMutation(api.users.updateProfileCard)
+  const updateAvatar = useMutation(api.users.updateAvatar)
+  const getUploadUrl = useAction(api.upload.getCardImageUploadUrl)
+
+  const totalCards = 1 + cards.length
 
   const [activeIndex, setActiveIndex] = useState(0)
   const [editingCardId, setEditingCardId] = useState<Id<'cards'> | null>(null)
+  const [isEditingProfileCard, setIsEditingProfileCard] = useState(false)
+  const [profileEditForm, setProfileEditForm] = useState<ProfileEditForm>({
+    name: '',
+    occupation: '',
+    description: '',
+    color: DEFAULT_CARD_COLOR.hex,
+  })
   const [showcaseEditForm, setShowcaseEditForm] = useState<ShowcaseEditForm>({
     name: '',
+    occupation: '',
     description: '',
     color: DEFAULT_CARD_COLOR.hex,
   })
@@ -45,8 +64,13 @@ function AppHome() {
   })
   const [isUploading, setIsUploading] = useState(false)
   const [addCardDialogOpen, setAddCardDialogOpen] = useState(false)
+  const [cropDialog, setCropDialog] = useState<{
+    open: boolean
+    imageSrc: string
+    target: UploadTarget | null
+  }>({ open: false, imageSrc: '', target: null })
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const uploadTargetCardId = useRef<Id<'cards'> | null>(null)
+  const uploadTarget = useRef<UploadTarget | null>(null)
 
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'center',
@@ -66,7 +90,7 @@ function AppHome() {
     }
   }, [emblaApi, onSelect])
 
-const handleAddCard = async (type: 'showcase' | 'story') => {
+  const handleAddCard = async (type: 'showcase' | 'story') => {
     if (cards.length >= MAX_CARDS) return
     try {
       await createCard({
@@ -78,8 +102,38 @@ const handleAddCard = async (type: 'showcase' | 'story') => {
     }
   }
 
+  // Profile card handlers
+  const handleStartProfileEdit = () => {
+    setIsEditingProfileCard(true)
+    setEditingCardId(null)
+    setProfileEditForm({
+      name: currentUser?.name ?? '',
+      occupation: currentUser?.occupation ?? '',
+      description: currentUser?.description ?? '',
+      color: currentUser?.cardColor ?? DEFAULT_CARD_COLOR.hex,
+    })
+  }
+
+  const handleSaveProfileEdit = async () => {
+    try {
+      await updateProfileCardMutation({
+        name: profileEditForm.name || undefined,
+        occupation: profileEditForm.occupation || undefined,
+        description: profileEditForm.description || undefined,
+        cardColor: profileEditForm.color,
+      })
+      setIsEditingProfileCard(false)
+    } catch (_err) {
+      // Update failed
+    }
+  }
+
+  const handleCancelProfileEdit = () => setIsEditingProfileCard(false)
+
+  // Card handlers
   const handleStartEdit = (card: CardData) => {
     setEditingCardId(card._id)
+    setIsEditingProfileCard(false)
     if (card.type === 'story') {
       setStoryEditForm({
         storyBlocks: (
@@ -94,6 +148,7 @@ const handleAddCard = async (type: 'showcase' | 'story') => {
     } else {
       setShowcaseEditForm({
         name: card.name ?? '',
+        occupation: card.occupation ?? '',
         description: card.description ?? '',
         color: card.color ?? DEFAULT_CARD_COLOR.hex,
       })
@@ -118,6 +173,7 @@ const handleAddCard = async (type: 'showcase' | 'story') => {
         await updateCard({
           cardId: editingCardId,
           name: showcaseEditForm.name || undefined,
+          occupation: showcaseEditForm.occupation || undefined,
           description: showcaseEditForm.description || undefined,
           color: showcaseEditForm.color,
         })
@@ -133,7 +189,9 @@ const handleAddCard = async (type: 'showcase' | 'story') => {
   const handleDeleteCard = async (cardId: Id<'cards'>) => {
     try {
       await deleteCard({ cardId })
-      if (activeIndex >= cards.length - 1 && activeIndex > 0) {
+      // Account for the profile card offset: total items = 1 + cards.length
+      const totalAfterDelete = 1 + cards.length - 1
+      if (activeIndex >= totalAfterDelete && activeIndex > 0) {
         setActiveIndex(activeIndex - 1)
       }
     } catch (_err) {
@@ -158,30 +216,46 @@ const handleAddCard = async (type: 'showcase' | 'story') => {
     })
   }
 
-  const handleImageClick = (cardId: Id<'cards'>) => {
-    uploadTargetCardId.current = cardId
+  const handleProfileImageClick = () => {
+    uploadTarget.current = { type: 'profile' }
     fileInputRef.current?.click()
   }
 
-  const handleImageUpload = async (file: File, cardId: Id<'cards'>) => {
+  const handleCardImageClick = (cardId: Id<'cards'>) => {
+    uploadTarget.current = { type: 'card', cardId }
+    fileInputRef.current?.click()
+  }
+
+  const handleImageUpload = async (
+    file: File,
+    target: UploadTarget,
+  ) => {
     setIsUploading(true)
     try {
-      const res = await fetch('/api/upload/image')
-      if (!res.ok) throw new Error('Failed to get upload URL')
-      const { uploadURL, id } = (await res.json()) as {
-        uploadURL: string
-        id: string
-      }
+      const { uploadURL, id } = await getUploadUrl({})
       const form = new FormData()
       form.append('file', file)
       const uploadRes = await fetch(uploadURL, { method: 'POST', body: form })
       if (!uploadRes.ok) throw new Error('Upload failed')
-      await updateCardImage({ cardId, imageId: id })
+      if (target.type === 'profile') {
+        await updateAvatar({ imageId: id })
+      } else {
+        await updateCardImage({ cardId: target.cardId, imageId: id })
+      }
     } catch (_err) {
       // Upload failed
     } finally {
       setIsUploading(false)
     }
+  }
+
+  const handleCropConfirm = async (blob: Blob) => {
+    const target = cropDialog.target
+    URL.revokeObjectURL(cropDialog.imageSrc)
+    setCropDialog({ open: false, imageSrc: '', target: null })
+    if (!target) return
+    const file = new File([blob], 'image.jpg', { type: 'image/jpeg' })
+    await handleImageUpload(file, target)
   }
 
   if (currentUser === undefined) {
@@ -207,8 +281,9 @@ const handleAddCard = async (type: 'showcase' | 'story') => {
           key={card._id}
           card={card}
           index={index}
-          total={cards.length}
+          total={totalCards}
           storyEditForm={storyEditForm}
+          userData={currentUser}
           onStoryFormChange={setStoryEditForm}
           onAddBlock={handleAddBlock}
           {...sharedCardProps}
@@ -220,31 +295,60 @@ const handleAddCard = async (type: 'showcase' | 'story') => {
         key={card._id}
         card={card}
         index={index}
-        total={cards.length}
+        total={totalCards}
         isUploading={isUploading}
         showcaseEditForm={showcaseEditForm}
-        onImageClick={() => handleImageClick(card._id)}
+        userData={currentUser}
+        onImageClick={() => handleCardImageClick(card._id)}
         onShowcaseFormChange={setShowcaseEditForm}
         {...sharedCardProps}
       />
     )
   }
 
+  const profileCard = (
+    <ProfileCard
+      user={currentUser ?? { email: '' }}
+      index={0}
+      total={totalCards}
+      isUploading={isUploading}
+      isEditing={isEditingProfileCard}
+      editForm={profileEditForm}
+      userData={currentUser}
+      onImageClick={handleProfileImageClick}
+      onStartEdit={handleStartProfileEdit}
+      onSaveEdit={handleSaveProfileEdit}
+      onCancelEdit={handleCancelProfileEdit}
+      onEditFormChange={setProfileEditForm}
+    />
+  )
+
   return (
-    <div className="min-h-screen bg-white px-6 py-8 flex flex-col items-center">
+    <div className="min-h-screen bg-white px-6 py-8 flex flex-col items-center overflow-x-hidden">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
         className="hidden"
-        onChange={async (e) => {
+        onChange={(e) => {
           const file = e.target.files?.[0]
-          const targetId = uploadTargetCardId.current
-          if (file && targetId) {
-            await handleImageUpload(file, targetId)
+          const target = uploadTarget.current
+          if (file && target) {
+            const src = URL.createObjectURL(file)
+            setCropDialog({ open: true, imageSrc: src, target })
           }
           e.target.value = ''
+        }}
+      />
+
+      <ImageCropDialog
+        open={cropDialog.open}
+        imageSrc={cropDialog.imageSrc}
+        onConfirm={handleCropConfirm}
+        onClose={() => {
+          URL.revokeObjectURL(cropDialog.imageSrc)
+          setCropDialog({ open: false, imageSrc: '', target: null })
         }}
       />
 
@@ -261,17 +365,16 @@ const handleAddCard = async (type: 'showcase' | 'story') => {
         </div>
 
         {/* Cards */}
-        {cards.length === 0 ? (
-          <EmptyCardPlaceholder onGetStarted={() => setAddCardDialogOpen(true)} />
-        ) : cards.length === 1 ? (
-          renderCard(cards[0], 0)
+        {totalCards === 1 ? (
+          profileCard
         ) : (
           <div className="-mx-1">
-            <div ref={emblaRef} className="">
+            <div ref={emblaRef}>
               <div className="flex gap-4">
+                <div className="flex-none w-80">{profileCard}</div>
                 {cards.map((card, i) => (
                   <div key={card._id} className="flex-none w-80">
-                    {renderCard(card, i)}
+                    {renderCard(card, i + 1)}
                   </div>
                 ))}
               </div>
@@ -280,15 +383,23 @@ const handleAddCard = async (type: 'showcase' | 'story') => {
         )}
 
         {/* Dot navigation */}
-        {cards.length > 1 && (
+        {totalCards > 1 && (
           <div className="flex items-center justify-center gap-2 mt-4">
+            <Button
+              key="profile"
+              onClick={() => emblaApi?.scrollTo(0)}
+              variant="ghost"
+              className={`w-2 h-2 p-0 min-w-0 rounded-full transition-colors hover:bg-transparent ${
+                0 === activeIndex ? 'bg-neutral-700' : 'bg-neutral-300'
+              }`}
+            />
             {cards.map((card, i) => (
               <Button
                 key={card._id}
-                onClick={() => emblaApi?.scrollTo(i)}
+                onClick={() => emblaApi?.scrollTo(i + 1)}
                 variant="ghost"
                 className={`w-2 h-2 p-0 min-w-0 rounded-full transition-colors hover:bg-transparent ${
-                  i === activeIndex ? 'bg-neutral-700' : 'bg-neutral-300'
+                  i + 1 === activeIndex ? 'bg-neutral-700' : 'bg-neutral-300'
                 }`}
               />
             ))}
@@ -314,7 +425,6 @@ const handleAddCard = async (type: 'showcase' | 'story') => {
           </>
         )}
       </div>
-
     </div>
   )
 }

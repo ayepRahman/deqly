@@ -64,6 +64,7 @@ export const updateCard = mutation({
   args: {
     cardId: v.id('cards'),
     name: v.optional(v.string()),
+    occupation: v.optional(v.string()),
     description: v.optional(v.string()),
     storyBlocks: v.optional(v.array(storyBlockValidator)),
     color: v.optional(v.string()),

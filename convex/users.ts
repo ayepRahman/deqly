@@ -1,4 +1,4 @@
-import { v } from 'convex/values'
+import { ConvexError, v } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import { getUser } from './auth'
 
@@ -21,8 +21,12 @@ export const getByUsername = query({
       occupation: user.occupation,
       mobileNumber: user.mobileNumber,
       websiteLink: user.websiteLink,
+      addMobileToCard: user.addMobileToCard,
+      addWebsiteToCard: user.addWebsiteToCard,
       avatarImageId: user.avatarImageId,
       bannerImageId: user.bannerImageId,
+      description: user.description,
+      cardColor: user.cardColor,
     }
   },
 })
@@ -73,6 +77,27 @@ export const checkUsernameAvailability = query({
   },
 })
 
+export const updateProfileCard = mutation({
+  args: {
+    name: v.optional(v.string()),
+    occupation: v.optional(v.string()),
+    description: v.optional(v.string()),
+    cardColor: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const currentUser = await getUser(ctx)
+    if (args.description && args.description.length > 220) {
+      throw new ConvexError('Description must be 220 characters or less')
+    }
+    await ctx.db.patch(currentUser._id, {
+      name: args.name,
+      occupation: args.occupation,
+      description: args.description,
+      cardColor: args.cardColor,
+    })
+  },
+})
+
 export const updateProfile = mutation({
   args: {
     name: v.optional(v.string()),
@@ -80,16 +105,18 @@ export const updateProfile = mutation({
     occupation: v.optional(v.string()),
     mobileNumber: v.optional(v.string()),
     websiteLink: v.optional(v.string()),
+    addMobileToCard: v.optional(v.boolean()),
+    addWebsiteToCard: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const currentUser = await getUser(ctx)
 
     const normalized = args.username.toLowerCase().trim()
     if (normalized.length < 3) {
-      throw new Error('Username must be at least 3 characters')
+      throw new ConvexError('Username must be at least 3 characters')
     }
     if (!/^[a-z0-9_]+$/.test(normalized)) {
-      throw new Error(
+      throw new ConvexError(
         'Username can only contain lowercase letters, numbers, and underscores',
       )
     }
@@ -100,7 +127,7 @@ export const updateProfile = mutation({
       .first()
 
     if (existing && existing._id !== currentUser._id) {
-      throw new Error('Username is already taken')
+      throw new ConvexError('Username is already taken')
     }
 
     await ctx.db.patch(currentUser._id, {
@@ -109,6 +136,8 @@ export const updateProfile = mutation({
       occupation: args.occupation,
       mobileNumber: args.mobileNumber,
       websiteLink: args.websiteLink,
+      addMobileToCard: args.addMobileToCard,
+      addWebsiteToCard: args.addWebsiteToCard,
     })
   },
 })

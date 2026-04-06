@@ -9,8 +9,12 @@ export default defineSchema({
     occupation: v.optional(v.string()),
     mobileNumber: v.optional(v.string()),
     websiteLink: v.optional(v.string()),
+    addMobileToCard: v.optional(v.boolean()),
+    addWebsiteToCard: v.optional(v.boolean()),
     avatarImageId: v.optional(v.string()),
     bannerImageId: v.optional(v.string()),
+    description: v.optional(v.string()),
+    cardColor: v.optional(v.string()),
   })
     .index('by_email', ['email'])
     .index('by_username', ['username']),

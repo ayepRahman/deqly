@@ -7,15 +7,9 @@ interface LoginViewProps {
   loading: boolean
   error: string | null
   onSubmit: (values: { email: string }) => void
-  onSwitchToSignUp: () => void
 }
 
-export function LoginView({
-  loading,
-  error,
-  onSubmit,
-  onSwitchToSignUp,
-}: LoginViewProps) {
+export function LoginView({ loading, error, onSubmit }: LoginViewProps) {
   const form = useAppForm({
     defaultValues: { email: '' },
     validators: {
@@ -75,14 +69,6 @@ export function LoginView({
             {loading ? 'Sending...' : 'Send Me A Magic Link!'}
           </Button>
         </form>
-
-        <Button
-          variant="link"
-          onClick={onSwitchToSignUp}
-          className="mt-8 mb-8 text-sm text-gray-400"
-        >
-          Don&apos;t have an account? <span className="underline">Sign up</span>
-        </Button>
       </div>
 
       <PageFooter />

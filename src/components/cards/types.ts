@@ -35,6 +35,7 @@ export interface CardData {
   type: 'showcase' | 'story'
   imageId?: string
   name?: string
+  occupation?: string
   description?: string
   storyBlocks?: StoryBlock[]
   color?: string
@@ -43,6 +44,7 @@ export interface CardData {
 
 export interface ShowcaseEditForm {
   name: string
+  occupation: string
   description: string
   color: string
 }
@@ -50,4 +52,25 @@ export interface ShowcaseEditForm {
 export interface StoryEditForm {
   storyBlocks: Array<{ title: string; subheader: string; description: string }>
   color: string
+}
+
+export interface ProfileEditForm {
+  name: string
+  occupation: string
+  description: string
+  color: string
+}
+
+export interface UserData {
+  email: string
+  name?: string
+  username?: string
+  occupation?: string
+  mobileNumber?: string
+  websiteLink?: string
+  addMobileToCard?: boolean
+  addWebsiteToCard?: boolean
+  avatarImageId?: string
+  description?: string
+  cardColor?: string
 }
