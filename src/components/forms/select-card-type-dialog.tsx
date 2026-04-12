@@ -13,7 +13,7 @@ interface SelectCardTypeDialogProps {
 function ShowcaseIcon({ selected }: { selected: boolean }) {
   const color = selected ? 'white' : '#a3a3a3'
   return (
-    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+    <svg width="64" height="64" viewBox="0 0 64 64" fill="none" role="img" aria-label="Showcase card">
       {/* Bottom card */}
       <rect x="10" y="22" width="40" height="32" rx="4" fill={color} opacity="0.4" />
       {/* Middle card */}
@@ -29,7 +29,7 @@ function ShowcaseIcon({ selected }: { selected: boolean }) {
 function StoryIcon({ selected }: { selected: boolean }) {
   const color = selected ? 'white' : '#a3a3a3'
   return (
-    <svg width="48" height="60" viewBox="0 0 48 60" fill="none">
+    <svg width="48" height="60" viewBox="0 0 48 60" fill="none" role="img" aria-label="Story card">
       <rect x="2" y="2" width="44" height="56" rx="6" fill={color} opacity={selected ? 1 : 0.6} />
       <rect x="10" y="16" width="28" height="3" rx="1.5" fill={selected ? '#7855FF' : '#d4d4d4'} />
       <rect x="10" y="24" width="28" height="3" rx="1.5" fill={selected ? '#7855FF' : '#d4d4d4'} />
