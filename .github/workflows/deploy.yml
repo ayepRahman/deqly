@@ -98,6 +98,29 @@ jobs:
           VITE_CONVEX_SITE_URL: ${{ vars.VITE_CONVEX_SITE_URL }}
           VITE_CLOUDFLARE_IMAGES_ACCOUNT_HASH: ${{ vars.VITE_CLOUDFLARE_IMAGES_ACCOUNT_HASH }}
 
+      - name: Set Worker secrets
+        run: |
+          echo "$VITE_CONVEX_URL" | pnpm wrangler secret put VITE_CONVEX_URL
+          echo "$VITE_CONVEX_SITE_URL" | pnpm wrangler secret put VITE_CONVEX_SITE_URL
+          echo "$SITE_URL" | pnpm wrangler secret put SITE_URL
+          echo "$BETTER_AUTH_SECRET" | pnpm wrangler secret put BETTER_AUTH_SECRET
+          echo "$RESEND_API_KEY" | pnpm wrangler secret put RESEND_API_KEY
+          echo "$EMAIL_FROM" | pnpm wrangler secret put EMAIL_FROM
+          echo "$CLOUDFLARE_ACCOUNT_ID" | pnpm wrangler secret put CLOUDFLARE_ACCOUNT_ID
+          echo "$CLOUDFLARE_IMAGES_API_TOKEN" | pnpm wrangler secret put CLOUDFLARE_IMAGES_API_TOKEN
+          echo "$VITE_CLOUDFLARE_IMAGES_ACCOUNT_HASH" | pnpm wrangler secret put VITE_CLOUDFLARE_IMAGES_ACCOUNT_HASH
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          VITE_CONVEX_URL: ${{ vars.VITE_CONVEX_URL }}
+          VITE_CONVEX_SITE_URL: ${{ vars.VITE_CONVEX_SITE_URL }}
+          SITE_URL: ${{ vars.SITE_URL }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+          CLOUDFLARE_IMAGES_API_TOKEN: ${{ secrets.CLOUDFLARE_IMAGES_API_TOKEN }}
+          VITE_CLOUDFLARE_IMAGES_ACCOUNT_HASH: ${{ vars.VITE_CLOUDFLARE_IMAGES_ACCOUNT_HASH }}
+
       - name: Deploy to Cloudflare Workers
         run: pnpm wrangler deploy
         env:
