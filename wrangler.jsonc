@@ -6,5 +6,9 @@
   "main": "@tanstack/react-start/server-entry",
   "assets": {
     "directory": "./dist/client"
-  }
+  },
+  "workers_dev": false,
+  "routes": [
+    { "pattern": "app.deqly.com", "custom_domain": true }
+  ]
 }
