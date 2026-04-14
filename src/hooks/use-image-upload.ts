@@ -1,4 +1,4 @@
-import { useMutation } from 'convex/react'
+import { useAction, useMutation } from 'convex/react'
 import { useState } from 'react'
 import { api } from '../../convex/_generated/api'
 
@@ -14,6 +14,7 @@ export function useImageUpload(type: ImageType): UseImageUploadReturn {
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const getUploadUrl = useAction(api.upload.getCardImageUploadUrl)
   const updateAvatar = useMutation(api.users.updateAvatar)
   const updateBanner = useMutation(api.users.updateBanner)
 
@@ -22,16 +23,8 @@ export function useImageUpload(type: ImageType): UseImageUploadReturn {
     setError(null)
 
     try {
-      // Step 1: Get a direct upload URL from our server
-      const res = await fetch('/api/upload/image')
-      if (!res.ok) {
-        const body = (await res.json()) as { error?: string }
-        throw new Error(body.error ?? 'Failed to get upload URL')
-      }
-      const { uploadURL, id } = (await res.json()) as {
-        uploadURL: string
-        id: string
-      }
+      // Step 1: Get a direct upload URL from Convex action
+      const { uploadURL, id } = await getUploadUrl({})
 
       // Step 2: Upload the file directly to Cloudflare
       const form = new FormData()
