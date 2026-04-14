@@ -64,7 +64,7 @@ export function LoginView({ loading, error, onSubmit }: LoginViewProps) {
           <Button
             type="submit"
             disabled={loading}
-            className="mt-8 px-8 h-12 rounded-full bg-violet-500 text-white text-sm font-semibold hover:bg-violet-600 disabled:opacity-50 shadow-lg shadow-violet-200"
+            className="mt-8 mb-8 px-8 h-12 rounded-full bg-violet-500 text-white text-sm font-semibold hover:bg-violet-600 disabled:opacity-50 shadow-lg shadow-violet-200"
           >
             {loading ? 'Sending...' : 'Send Me A Magic Link!'}
           </Button>
