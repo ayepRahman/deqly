@@ -37,9 +37,8 @@ Required in `.env.local`:
 | `SITE_URL` | Base URL for magic link emails |
 | `RESEND_API_KEY` | Transactional email via Resend |
 | `EMAIL_FROM` | Sender address (default: `Deqly <noreply@deqly.com>`) |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Images account |
-| `CLOUDFLARE_IMAGES_API_TOKEN` | Cloudflare Images API token |
-| `VITE_CLOUDFLARE_IMAGES_ACCOUNT_HASH` | Public delivery hash for image URLs |
+
+Images are served from Convex file storage — no image-specific env vars required.
 
 ## Architecture
 
@@ -49,7 +48,7 @@ Required in `.env.local`:
 - **Backend**: Convex (real-time database + serverless functions)
 - **Auth**: Better Auth + `@convex-dev/better-auth` — magic link only (email/password disabled)
 - **Email**: Resend
-- **Image storage**: Cloudflare Images (direct upload flow)
+- **Image storage**: Convex file storage (`ctx.storage`) with direct client upload
 - **Styling**: Tailwind CSS v4 + `class-variance-authority`
 - **Icons**: lucide-react (use this everywhere, no other icon libraries)
 
@@ -96,11 +95,10 @@ TanStack Router with file-based routing under `src/routes/`. Auto-generated rout
 
 ### Image Upload Flow
 
-1. Client calls `GET /api/upload/image` (requires session)
-2. Server fetches a direct-upload URL from Cloudflare Images
-3. Client POSTs the file directly to Cloudflare
-4. Client calls `updateCardImage` mutation with the returned Cloudflare image ID
-5. Images rendered via `https://imagedelivery.net/${accountHash}/${imageId}/public`
+1. Client calls the `api.upload.generateUploadUrl` mutation (requires session) — it wraps `ctx.storage.generateUploadUrl()`.
+2. Client POSTs the raw file body to that URL with `Content-Type: file.type`. Convex responds with `{ storageId }`.
+3. Client calls `updateCardImage` / `updateAvatar` / `updateBanner` with the `storageId`. The mutation deletes any previous storage file before patching.
+4. List/get queries (`listMyCards`, `listByUserId`, `getByUsername`, `getCurrentUser`) resolve storage IDs to URLs on the server via `ctx.storage.getUrl()` and return `imageUrl` / `avatarImageUrl` / `bannerImageUrl` fields alongside the data.
 
 ### Component Structure
 
@@ -111,7 +109,7 @@ Components live under `src/components/<feature>/`:
 ```
 src/components/
   cards/
-    types.ts              # Shared types, interfaces, constants, helpers (CardData, MAX_CARDS, getImageUrl, …)
+    types.ts              # Shared types, interfaces, constants, helpers (CardData, MAX_CARDS, …)
     card-icons.tsx        # Pure SVG/icon components (ImagePlaceholderIcon, AddCardIcon, AddBlockIcon)
     showcase-card.tsx     # ShowcaseCard component
     story-card.tsx        # StoryCard component

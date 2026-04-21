@@ -16,10 +16,6 @@ import { NotFoundView } from '~/components/not-found-view'
 import { Button } from '~/components/ui/button'
 import { api } from '../../convex/_generated/api'
 
-const ACCOUNT_HASH = import.meta.env.VITE_CLOUDFLARE_IMAGES_ACCOUNT_HASH as
-  | string
-  | undefined
-
 export const Route = createFileRoute('/$username')({
   loader: async ({ context, params }) => {
     const user = await context.queryClient.ensureQueryData(
@@ -37,10 +33,7 @@ export const Route = createFileRoute('/$username')({
     parts.push(`View ${displayName}'s digital business card on Deqly`)
     const description = parts.join(' — ')
 
-    const ogImage =
-      user?.avatarImageId && ACCOUNT_HASH
-        ? `https://imagedelivery.net/${ACCOUNT_HASH}/${user.avatarImageId}/public`
-        : undefined
+    const ogImage = user?.avatarImageUrl ?? undefined
 
     const siteUrl =
       typeof window !== 'undefined'
@@ -129,7 +122,8 @@ function PublicProfile() {
     websiteLink: profileUser.websiteLink,
     addMobileToCard: profileUser.addMobileToCard,
     addWebsiteToCard: profileUser.addWebsiteToCard,
-    avatarImageId: profileUser.avatarImageId,
+    avatarImageUrl: profileUser.avatarImageUrl,
+    bannerImageUrl: profileUser.bannerImageUrl,
     description: profileUser.description,
     cardColor: profileUser.cardColor,
   }

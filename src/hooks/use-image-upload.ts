@@ -1,6 +1,7 @@
-import { useAction, useMutation } from 'convex/react'
+import { useMutation } from 'convex/react'
 import { useState } from 'react'
 import { api } from '../../convex/_generated/api'
+import type { Id } from '../../convex/_generated/dataModel'
 
 type ImageType = 'avatar' | 'banner'
 
@@ -14,7 +15,7 @@ export function useImageUpload(type: ImageType): UseImageUploadReturn {
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const getUploadUrl = useAction(api.upload.getCardImageUploadUrl)
+  const generateUploadUrl = useMutation(api.upload.generateUploadUrl)
   const updateAvatar = useMutation(api.users.updateAvatar)
   const updateBanner = useMutation(api.users.updateBanner)
 
@@ -23,22 +24,26 @@ export function useImageUpload(type: ImageType): UseImageUploadReturn {
     setError(null)
 
     try {
-      // Step 1: Get a direct upload URL from Convex action
-      const { uploadURL, id } = await getUploadUrl({})
+      const uploadUrl = await generateUploadUrl({})
 
-      // Step 2: Upload the file directly to Cloudflare
-      const form = new FormData()
-      form.append('file', file)
-      const uploadRes = await fetch(uploadURL, { method: 'POST', body: form })
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      })
+
       if (!uploadRes.ok) {
-        throw new Error('Upload to Cloudflare failed')
+        throw new Error('Upload to Convex storage failed')
       }
 
-      // Step 3: Persist the image ID in Convex
+      const { storageId } = (await uploadRes.json()) as {
+        storageId: Id<'_storage'>
+      }
+
       if (type === 'avatar') {
-        await updateAvatar({ imageId: id })
+        await updateAvatar({ storageId })
       } else {
-        await updateBanner({ imageId: id })
+        await updateBanner({ storageId })
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Upload failed')

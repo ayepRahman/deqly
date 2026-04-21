@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useAction, useMutation, useQuery } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import useEmblaCarousel from 'embla-carousel-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AddCardIcon } from '~/components/cards/card-icons'
@@ -38,7 +38,7 @@ function AppHome() {
   const updateCardImage = useMutation(api.cards.updateCardImage)
   const updateProfileCardMutation = useMutation(api.users.updateProfileCard)
   const updateAvatar = useMutation(api.users.updateAvatar)
-  const getUploadUrl = useAction(api.upload.getCardImageUploadUrl)
+  const generateUploadUrl = useMutation(api.upload.generateUploadUrl)
 
   const totalCards = 1 + cards.length
 
@@ -228,15 +228,20 @@ function AppHome() {
   const handleImageUpload = async (file: File, target: UploadTarget) => {
     setIsUploading(true)
     try {
-      const { uploadURL, id } = await getUploadUrl({})
-      const form = new FormData()
-      form.append('file', file)
-      const uploadRes = await fetch(uploadURL, { method: 'POST', body: form })
+      const uploadUrl = await generateUploadUrl({})
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      })
       if (!uploadRes.ok) throw new Error('Upload failed')
+      const { storageId } = (await uploadRes.json()) as {
+        storageId: Id<'_storage'>
+      }
       if (target.type === 'profile') {
-        await updateAvatar({ imageId: id })
+        await updateAvatar({ storageId })
       } else {
-        await updateCardImage({ cardId: target.cardId, imageId: id })
+        await updateCardImage({ cardId: target.cardId, storageId })
       }
     } catch (_err) {
       // Upload failed

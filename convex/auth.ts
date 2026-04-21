@@ -139,6 +139,16 @@ export const getUser = async (ctx: QueryCtx | MutationCtx) => {
 export const getCurrentUser = query({
   args: {},
   handler: async (ctx) => {
-    return await safeGetUser(ctx)
+    const user = await safeGetUser(ctx)
+    if (!user) {
+      return null
+    }
+    const avatarImageUrl = user.avatarImageId
+      ? await ctx.storage.getUrl(user.avatarImageId)
+      : null
+    const bannerImageUrl = user.bannerImageId
+      ? await ctx.storage.getUrl(user.bannerImageId)
+      : null
+    return { ...user, avatarImageUrl, bannerImageUrl }
   },
 })

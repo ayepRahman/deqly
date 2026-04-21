@@ -1,5 +1,6 @@
 import { v } from 'convex/values'
-import { mutation, query } from './_generated/server'
+import { type QueryCtx, mutation, query } from './_generated/server'
+import type { Doc } from './_generated/dataModel'
 import { getUser } from './auth'
 
 const MAX_CARDS = 3
@@ -12,6 +13,18 @@ const storyBlockValidator = v.object({
   description: v.optional(v.string()),
 })
 
+async function withImageUrls(
+  ctx: QueryCtx,
+  cards: Array<Doc<'cards'>>,
+) {
+  return Promise.all(
+    cards.map(async (card) => ({
+      ...card,
+      imageUrl: card.imageId ? await ctx.storage.getUrl(card.imageId) : null,
+    })),
+  )
+}
+
 export const listMyCards = query({
   args: {},
   handler: async (ctx) => {
@@ -20,7 +33,8 @@ export const listMyCards = query({
       .query('cards')
       .withIndex('by_userId', (q) => q.eq('userId', user._id))
       .collect()
-    return cards.sort((a, b) => a.order - b.order)
+    const sorted = cards.sort((a, b) => a.order - b.order)
+    return withImageUrls(ctx, sorted)
   },
 })
 
@@ -31,7 +45,8 @@ export const listByUserId = query({
       .query('cards')
       .withIndex('by_userId', (q) => q.eq('userId', args.userId))
       .collect()
-    return cards.sort((a, b) => a.order - b.order)
+    const sorted = cards.sort((a, b) => a.order - b.order)
+    return withImageUrls(ctx, sorted)
   },
 })
 
@@ -117,6 +132,10 @@ export const deleteCard = mutation({
       throw new Error('Card not found')
     }
 
+    if (card.imageId) {
+      await ctx.storage.delete(card.imageId)
+    }
+
     await ctx.db.delete(args.cardId)
 
     const remaining = await ctx.db
@@ -136,7 +155,7 @@ export const deleteCard = mutation({
 export const updateCardImage = mutation({
   args: {
     cardId: v.id('cards'),
-    imageId: v.string(),
+    storageId: v.id('_storage'),
   },
   handler: async (ctx, args) => {
     const user = await getUser(ctx)
@@ -146,6 +165,10 @@ export const updateCardImage = mutation({
       throw new Error('Card not found')
     }
 
-    await ctx.db.patch(args.cardId, { imageId: args.imageId })
+    if (card.imageId && card.imageId !== args.storageId) {
+      await ctx.storage.delete(card.imageId)
+    }
+
+    await ctx.db.patch(args.cardId, { imageId: args.storageId })
   },
 })

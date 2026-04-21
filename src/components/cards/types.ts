@@ -15,15 +15,6 @@ export const CARD_COLORS = [
 
 export const DEFAULT_CARD_COLOR = CARD_COLORS[0]
 
-const accountHash = import.meta.env.VITE_CLOUDFLARE_IMAGES_ACCOUNT_HASH as
-  | string
-  | undefined
-
-export function getImageUrl(imageId: string | undefined, variant = 'public') {
-  if (!imageId || !accountHash) return null
-  return `https://imagedelivery.net/${accountHash}/${imageId}/${variant}`
-}
-
 export interface StoryBlock {
   title: string
   subheader?: string
@@ -33,7 +24,7 @@ export interface StoryBlock {
 export interface CardData {
   _id: Id<'cards'>
   type: 'showcase' | 'story'
-  imageId?: string
+  imageUrl?: string | null
   name?: string
   occupation?: string
   description?: string
@@ -75,7 +66,8 @@ export interface UserData {
   websiteLink?: string
   addMobileToCard?: boolean
   addWebsiteToCard?: boolean
-  avatarImageId?: string
+  avatarImageUrl?: string | null
+  bannerImageUrl?: string | null
   description?: string
   cardColor?: string
 }

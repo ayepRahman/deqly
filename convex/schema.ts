@@ -11,8 +11,8 @@ export default defineSchema({
     websiteLink: v.optional(v.string()),
     addMobileToCard: v.optional(v.boolean()),
     addWebsiteToCard: v.optional(v.boolean()),
-    avatarImageId: v.optional(v.string()),
-    bannerImageId: v.optional(v.string()),
+    avatarImageId: v.optional(v.id('_storage')),
+    bannerImageId: v.optional(v.id('_storage')),
     description: v.optional(v.string()),
     cardColor: v.optional(v.string()),
   })
@@ -22,7 +22,7 @@ export default defineSchema({
     userId: v.id('users'),
     type: v.union(v.literal('showcase'), v.literal('story')),
     // showcase fields
-    imageId: v.optional(v.string()),
+    imageId: v.optional(v.id('_storage')),
     name: v.optional(v.string()),
     occupation: v.optional(v.string()),
     description: v.optional(v.string()),

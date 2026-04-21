@@ -14,6 +14,13 @@ export const getByUsername = query({
       return null
     }
 
+    const avatarImageUrl = user.avatarImageId
+      ? await ctx.storage.getUrl(user.avatarImageId)
+      : null
+    const bannerImageUrl = user.bannerImageId
+      ? await ctx.storage.getUrl(user.bannerImageId)
+      : null
+
     return {
       _id: user._id,
       name: user.name,
@@ -24,8 +31,8 @@ export const getByUsername = query({
       websiteLink: user.websiteLink,
       addMobileToCard: user.addMobileToCard,
       addWebsiteToCard: user.addWebsiteToCard,
-      avatarImageId: user.avatarImageId,
-      bannerImageId: user.bannerImageId,
+      avatarImageUrl,
+      bannerImageUrl,
       description: user.description,
       cardColor: user.cardColor,
     }
@@ -33,18 +40,30 @@ export const getByUsername = query({
 })
 
 export const updateAvatar = mutation({
-  args: { imageId: v.string() },
+  args: { storageId: v.id('_storage') },
   handler: async (ctx, args) => {
     const currentUser = await getUser(ctx)
-    await ctx.db.patch(currentUser._id, { avatarImageId: args.imageId })
+    if (
+      currentUser.avatarImageId &&
+      currentUser.avatarImageId !== args.storageId
+    ) {
+      await ctx.storage.delete(currentUser.avatarImageId)
+    }
+    await ctx.db.patch(currentUser._id, { avatarImageId: args.storageId })
   },
 })
 
 export const updateBanner = mutation({
-  args: { imageId: v.string() },
+  args: { storageId: v.id('_storage') },
   handler: async (ctx, args) => {
     const currentUser = await getUser(ctx)
-    await ctx.db.patch(currentUser._id, { bannerImageId: args.imageId })
+    if (
+      currentUser.bannerImageId &&
+      currentUser.bannerImageId !== args.storageId
+    ) {
+      await ctx.storage.delete(currentUser.bannerImageId)
+    }
+    await ctx.db.patch(currentUser._id, { bannerImageId: args.storageId })
   },
 })
 

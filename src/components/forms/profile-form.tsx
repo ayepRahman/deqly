@@ -1,6 +1,5 @@
 import { Camera, ArrowLeft } from 'lucide-react'
 import { useRef } from 'react'
-import { getImageUrl } from '~/components/cards/types'
 import { Button } from '~/components/ui/button'
 import { useImageUpload } from '~/hooks/use-image-upload'
 import { type ProfileValues, profileSchema } from '~/lib/validations'
@@ -14,8 +13,8 @@ interface CurrentUser {
   websiteLink?: string | null
   addMobileToCard?: boolean | null
   addWebsiteToCard?: boolean | null
-  avatarImageId?: string | null
-  bannerImageId?: string | null
+  avatarImageUrl?: string | null
+  bannerImageUrl?: string | null
 }
 
 interface ProfileFormProps {
@@ -41,8 +40,8 @@ export function ProfileForm({
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const bannerInputRef = useRef<HTMLInputElement>(null)
 
-  const avatarUrl = getImageUrl(currentUser.avatarImageId ?? undefined)
-  const bannerUrl = getImageUrl(currentUser.bannerImageId ?? undefined)
+  const avatarUrl = currentUser.avatarImageUrl ?? null
+  const bannerUrl = currentUser.bannerImageUrl ?? null
 
   const form = useAppForm({
     defaultValues: {

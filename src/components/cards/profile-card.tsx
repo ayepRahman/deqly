@@ -8,7 +8,6 @@ import { ColorPicker } from './color-picker'
 import { FlipCard } from './flip-card'
 import {
   DEFAULT_CARD_COLOR,
-  getImageUrl,
   getProfileUrl,
   MAX_DESCRIPTION,
   type ProfileEditForm,
@@ -193,14 +192,14 @@ export function ProfileCard({
     )
   }
 
-  if (user.avatarImageId) {
+  if (user.avatarImageUrl) {
     const cardFront = (
       <div className="w-80 h-[576px] relative rounded-[20px] outline outline-2 outline-neutral-200 overflow-hidden">
         {topBar(true)}
 
         {readOnly ? (
           <img
-            src={getImageUrl(user.avatarImageId) ?? ''}
+            src={user.avatarImageUrl}
             alt="Profile"
             className="absolute inset-0 w-full h-full object-cover"
           />
@@ -212,7 +211,7 @@ export function ProfileCard({
             className="absolute inset-0 w-full h-full p-0 rounded-none group"
           >
             <img
-              src={getImageUrl(user.avatarImageId) ?? ''}
+              src={user.avatarImageUrl}
               alt="Profile"
               className="w-full h-full object-cover"
             />

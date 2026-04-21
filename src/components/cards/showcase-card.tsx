@@ -17,7 +17,6 @@ import { FlipCard } from './flip-card'
 import {
   type CardData,
   DEFAULT_CARD_COLOR,
-  getImageUrl,
   getProfileUrl,
   MAX_DESCRIPTION,
   type ShowcaseEditForm,
@@ -210,7 +209,7 @@ export function ShowcaseCard({
     </div>
   )
 
-  if (card.imageId) {
+  if (card.imageUrl) {
     const cardFront = (
       <div className="w-80 h-[576px] relative rounded-[20px] outline outline-2 outline-neutral-200 overflow-hidden">
         {/* Top bar overlay */}
@@ -258,7 +257,7 @@ export function ShowcaseCard({
         {/* Full-bleed image */}
         {readOnly ? (
           <img
-            src={getImageUrl(card.imageId) ?? ''}
+            src={card.imageUrl}
             alt="Card showcase"
             className="absolute inset-0 w-full h-full object-cover"
           />
@@ -270,7 +269,7 @@ export function ShowcaseCard({
             className="absolute inset-0 w-full h-full p-0 rounded-none group"
           >
             <img
-              src={getImageUrl(card.imageId) ?? ''}
+              src={card.imageUrl}
               alt="Card showcase"
               className="w-full h-full object-cover"
             />
