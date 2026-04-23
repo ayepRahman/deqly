@@ -149,7 +149,7 @@ export function ShowcaseCard({
           onShowcaseFormChange({ ...showcaseEditForm, name: e.target.value })
         }
         placeholder="Name"
-        className="bg-transparent text-white font-bold text-xl border-b border-white/40 focus:border-white outline-none pb-0.5"
+        className="bg-transparent text-white font-bold text-xl border-b border-white/40 focus:border-white outline-none pb-0.5 touch-pan-y"
       />
       <input
         value={showcaseEditForm.occupation}
@@ -160,7 +160,7 @@ export function ShowcaseCard({
           })
         }
         placeholder="Occupation"
-        className="bg-transparent text-white text-base border-b border-white/40 focus:border-white outline-none pb-0.5"
+        className="bg-transparent text-white text-base border-b border-white/40 focus:border-white outline-none pb-0.5 touch-pan-y"
       />
       <div className="relative">
         <textarea
@@ -175,7 +175,7 @@ export function ShowcaseCard({
           }}
           placeholder="Add a description of your card here. Explain your project as best as you can within 220 characters thats leaves a good impact"
           rows={3}
-          className="w-full bg-transparent text-white text-sm outline outline-1 outline-white rounded-[10px] p-[5px] focus:outline-white/80 resize-none opacity-60 focus:opacity-100"
+          className="w-full bg-transparent text-white text-base outline outline-1 outline-white rounded-[10px] p-[5px] focus:outline-white/80 resize-none opacity-60 focus:opacity-100 touch-pan-y"
         />
         <span className="absolute bottom-2 right-2 text-xs text-white/50">
           {showcaseEditForm.description.length}/{MAX_DESCRIPTION}

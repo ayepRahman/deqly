@@ -98,7 +98,7 @@ export function ProfileCard({
           onEditFormChange({ ...editForm, name: e.target.value })
         }
         placeholder="Name"
-        className="bg-transparent text-white font-bold text-xl border-b border-white/40 focus:border-white outline-none pb-0.5"
+        className="bg-transparent text-white font-bold text-xl border-b border-white/40 focus:border-white outline-none pb-0.5 touch-pan-y"
       />
       <input
         value={editForm.occupation}
@@ -106,7 +106,7 @@ export function ProfileCard({
           onEditFormChange({ ...editForm, occupation: e.target.value })
         }
         placeholder="Occupation"
-        className="bg-transparent text-white text-base border-b border-white/40 focus:border-white outline-none pb-0.5"
+        className="bg-transparent text-white text-base border-b border-white/40 focus:border-white outline-none pb-0.5 touch-pan-y"
       />
       <div className="relative">
         <textarea
@@ -118,7 +118,7 @@ export function ProfileCard({
           }}
           placeholder="Add a description about yourself. Make it memorable within 220 characters"
           rows={3}
-          className="w-full bg-transparent text-white text-sm outline outline-1 outline-white rounded-[10px] p-[5px] focus:outline-white/80 resize-none opacity-60 focus:opacity-100"
+          className="w-full bg-transparent text-white text-base outline outline-1 outline-white rounded-[10px] p-[5px] focus:outline-white/80 resize-none opacity-60 focus:opacity-100 touch-pan-y"
         />
         <span className="absolute bottom-2 right-2 text-xs text-white/50">
           {editForm.description.length}/{MAX_DESCRIPTION}

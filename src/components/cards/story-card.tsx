@@ -126,11 +126,11 @@ export function StoryCard({
 
   const cardFront = (
     <div
-      className="w-80 rounded-[20px] outline outline-2 outline-neutral-200 overflow-hidden relative"
+      className="w-80 h-[576px] rounded-[20px] outline outline-2 outline-neutral-200 overflow-hidden relative"
       style={{ backgroundColor: accentColor }}
     >
       <LogoMask className="absolute -bottom-6 left-1/2 -translate-x-1/2 -rotate-90 w-64 h-auto text-white/10 pointer-events-none z-0" />
-      <div className="px-4 pt-5 pb-6 flex flex-col gap-4 min-h-[576px] relative z-[1]">
+      <div className="px-4 pt-5 pb-6 flex flex-col gap-4 h-full relative z-[1] overflow-y-auto touch-pan-y">
         {/* Top bar: edit left | counter center | trash right */}
         <div className="relative flex items-center justify-center h-8">
           {!readOnly && (
@@ -184,7 +184,7 @@ export function StoryCard({
                     value={block.title}
                     onChange={(e) => updateBlock(i, 'title', e.target.value)}
                     placeholder="Title"
-                    className="bg-transparent text-white text-xl font-bold border-b border-white/40 focus:border-white outline-none pb-0.5 flex-1"
+                    className="bg-transparent text-white text-xl font-bold border-b border-white/40 focus:border-white outline-none pb-0.5 flex-1 touch-pan-y"
                   />
                   {storyEditForm.storyBlocks.length > 1 && (
                     <Button
@@ -201,7 +201,7 @@ export function StoryCard({
                   value={block.subheader}
                   onChange={(e) => updateBlock(i, 'subheader', e.target.value)}
                   placeholder="Subheader"
-                  className="bg-transparent text-white text-base border-b border-white/40 focus:border-white outline-none pb-0.5"
+                  className="bg-transparent text-white text-base border-b border-white/40 focus:border-white outline-none pb-0.5 touch-pan-y"
                 />
                 <textarea
                   value={block.description}
@@ -212,7 +212,7 @@ export function StoryCard({
                   }}
                   placeholder="Add a description of your card here. Explain your project as best as you can within 220 characters thats leaves a good impact"
                   rows={3}
-                  className="w-full bg-transparent text-white text-sm outline outline-1 outline-white rounded-[10px] p-2.5 focus:outline-white/80 resize-none opacity-60 focus:opacity-100"
+                  className="w-full bg-transparent text-white text-base outline outline-1 outline-white rounded-[10px] p-2.5 focus:outline-white/80 resize-none opacity-60 focus:opacity-100 touch-pan-y"
                 />
               </div>
             ))}

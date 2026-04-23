@@ -71,9 +71,16 @@ function AppHome() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const uploadTarget = useRef<UploadTarget | null>(null)
 
+  const isAnyEditing = editingCardId !== null || isEditingProfileCard
+  const isAnyEditingRef = useRef(isAnyEditing)
+  useEffect(() => {
+    isAnyEditingRef.current = isAnyEditing
+  }, [isAnyEditing])
+
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'center',
     dragFree: false,
+    watchDrag: () => !isAnyEditingRef.current,
   })
 
   const onSelect = useCallback(() => {
@@ -105,6 +112,7 @@ function AppHome() {
   const handleStartProfileEdit = () => {
     setIsEditingProfileCard(true)
     setEditingCardId(null)
+    emblaApi?.scrollTo(0, true)
     setProfileEditForm({
       name: currentUser?.name ?? '',
       occupation: currentUser?.occupation ?? '',
@@ -133,6 +141,10 @@ function AppHome() {
   const handleStartEdit = (card: CardData) => {
     setEditingCardId(card._id)
     setIsEditingProfileCard(false)
+    const cardIndex = cards.findIndex((c) => c._id === card._id)
+    if (cardIndex >= 0) {
+      emblaApi?.scrollTo(cardIndex + 1, true)
+    }
     if (card.type === 'story') {
       setStoryEditForm({
         storyBlocks: (
