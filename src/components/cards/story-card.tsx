@@ -18,8 +18,10 @@ import {
   type CardData,
   DEFAULT_CARD_COLOR,
   getProfileUrl,
-  MAX_DESCRIPTION,
   MAX_STORY_BLOCKS,
+  MAX_STORY_DESCRIPTION,
+  MAX_SUBTITLE,
+  MAX_TITLE,
   type StoryEditForm,
   type UserData,
 } from './types'
@@ -32,6 +34,7 @@ interface StoryCardProps {
   storyEditForm?: StoryEditForm
   userData: UserData | null | undefined
   readOnly?: boolean
+  isActive?: boolean
   onStartEdit?: (card: CardData) => void
   onSaveEdit?: () => void
   onCancelEdit?: () => void
@@ -48,6 +51,7 @@ export function StoryCard({
   storyEditForm,
   userData,
   readOnly = false,
+  isActive = true,
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
@@ -133,7 +137,7 @@ export function StoryCard({
       <div className="px-4 pt-5 pb-6 flex flex-col gap-4 h-full relative z-[1] overflow-y-auto touch-pan-y">
         {/* Top bar: edit left | counter center | trash right */}
         <div className="relative flex items-center justify-center h-8">
-          {!readOnly && (
+          {!readOnly && isActive && (
             <div className="absolute left-0">
               {isEditing ? (
                 <Button
@@ -159,7 +163,7 @@ export function StoryCard({
           <span className="text-neutral-200 text-sm font-medium">
             {index + 1}/{total}
           </span>
-          {!readOnly && !isEditing && (
+          {!readOnly && !isEditing && isActive && (
             <div className="absolute right-0">
               <Button
                 onClick={() => setConfirmDelete(true)}
@@ -182,7 +186,12 @@ export function StoryCard({
                 <div className="flex items-center justify-between">
                   <input
                     value={block.title}
-                    onChange={(e) => updateBlock(i, 'title', e.target.value)}
+                    onChange={(e) => {
+                      if (e.target.value.length <= MAX_TITLE) {
+                        updateBlock(i, 'title', e.target.value)
+                      }
+                    }}
+                    maxLength={MAX_TITLE}
                     placeholder="Title"
                     className="bg-transparent text-white text-xl font-bold border-b border-white/40 focus:border-white outline-none pb-0.5 flex-1 touch-pan-y"
                   />
@@ -199,21 +208,32 @@ export function StoryCard({
                 </div>
                 <input
                   value={block.subheader}
-                  onChange={(e) => updateBlock(i, 'subheader', e.target.value)}
+                  onChange={(e) => {
+                    if (e.target.value.length <= MAX_SUBTITLE) {
+                      updateBlock(i, 'subheader', e.target.value)
+                    }
+                  }}
+                  maxLength={MAX_SUBTITLE}
                   placeholder="Subheader"
                   className="bg-transparent text-white text-base border-b border-white/40 focus:border-white outline-none pb-0.5 touch-pan-y"
                 />
-                <textarea
-                  value={block.description}
-                  onChange={(e) => {
-                    if (e.target.value.length <= MAX_DESCRIPTION) {
-                      updateBlock(i, 'description', e.target.value)
-                    }
-                  }}
-                  placeholder="Add a description of your card here. Explain your project as best as you can within 220 characters thats leaves a good impact"
-                  rows={3}
-                  className="w-full bg-transparent text-white text-base outline outline-1 outline-white rounded-[10px] p-2.5 focus:outline-white/80 resize-none opacity-60 focus:opacity-100 touch-pan-y"
-                />
+                <div className="relative">
+                  <textarea
+                    value={block.description}
+                    onChange={(e) => {
+                      if (e.target.value.length <= MAX_STORY_DESCRIPTION) {
+                        updateBlock(i, 'description', e.target.value)
+                      }
+                    }}
+                    maxLength={MAX_STORY_DESCRIPTION}
+                    placeholder="Add a description of your card here. Explain your project as best as you can within 220 characters thats leaves a good impact"
+                    rows={3}
+                    className="w-full bg-transparent text-white text-base outline outline-1 outline-white rounded-[10px] p-2.5 focus:outline-white/80 resize-none opacity-60 focus:opacity-100 touch-pan-y"
+                  />
+                  <span className="absolute bottom-2 right-2 text-xs text-white/50">
+                    {block.description.length}/{MAX_STORY_DESCRIPTION}
+                  </span>
+                </div>
               </div>
             ))}
             {storyEditForm.storyBlocks.length < MAX_STORY_BLOCKS && (
@@ -291,40 +311,42 @@ export function StoryCard({
         }
       />
 
-      <div className="flex justify-center gap-7 mt-4 w-80">
-        {isFlipped ? (
-          <>
-            <button type="button" onClick={handleCopyLink} className="flex flex-col items-center gap-1 w-16">
-              <Link className="w-7 h-7 text-neutral-700" />
-              <span className="text-sm text-black">{copied ? 'Copied!' : 'Copy link'}</span>
-            </button>
-            <button type="button" onClick={handleNativeShare} className="flex flex-col items-center gap-1 w-16">
-              <Upload className="w-7 h-7 text-neutral-700" />
-              <span className="text-sm text-black">Share</span>
-            </button>
-          </>
-        ) : isEditing ? (
-          <Button onClick={onSaveEdit} className="bg-brand-teal flex-1" size="lg">
-            Save Changes
-          </Button>
-        ) : readOnly ? (
-          <Button onClick={() => setIsFlipped(true)} className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5" size="lg">
-            <Share2 className="w-4 h-4" />
-            Share
-          </Button>
-        ) : (
-          <>
+      {(isActive || isFlipped || isEditing) && (
+        <div className="flex justify-center gap-7 mt-4 w-80">
+          {isFlipped ? (
+            <>
+              <button type="button" onClick={handleCopyLink} className="flex flex-col items-center gap-1 w-16">
+                <Link className="w-7 h-7 text-neutral-700" />
+                <span className="text-sm text-black">{copied ? 'Copied!' : 'Copy link'}</span>
+              </button>
+              <button type="button" onClick={handleNativeShare} className="flex flex-col items-center gap-1 w-16">
+                <Upload className="w-7 h-7 text-neutral-700" />
+                <span className="text-sm text-black">Share</span>
+              </button>
+            </>
+          ) : isEditing ? (
+            <Button onClick={onSaveEdit} className="bg-brand-teal flex-1" size="lg">
+              Save Changes
+            </Button>
+          ) : readOnly ? (
             <Button onClick={() => setIsFlipped(true)} className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5" size="lg">
               <Share2 className="w-4 h-4" />
               Share
             </Button>
-            <Button onClick={() => onStartEdit?.(card)} className="flex-1 bg-brand-teal hover:bg-teal-600 gap-1.5" size="lg">
-              <Pencil className="w-4 h-4" />
-              Edit
-            </Button>
-          </>
-        )}
-      </div>
+          ) : (
+            <>
+              <Button onClick={() => setIsFlipped(true)} className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5" size="lg">
+                <Share2 className="w-4 h-4" />
+                Share
+              </Button>
+              <Button onClick={() => onStartEdit?.(card)} className="flex-1 bg-brand-teal hover:bg-teal-600 gap-1.5" size="lg">
+                <Pencil className="w-4 h-4" />
+                Edit
+              </Button>
+            </>
+          )}
+        </div>
+      )}
 
       <Dialog
         open={confirmDelete}

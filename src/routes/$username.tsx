@@ -9,6 +9,7 @@ import { Pencil } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { LogoMask } from '~/components/cards/card-icons'
 import { ProfileCard } from '~/components/cards/profile-card'
+import { PublicCta } from '~/components/cards/public-cta'
 import { ShowcaseCard } from '~/components/cards/showcase-card'
 import { StoryCard } from '~/components/cards/story-card'
 import type { CardData, UserData } from '~/components/cards/types'
@@ -228,6 +229,8 @@ function PublicProfile() {
               ))}
             </div>
           )}
+
+          <PublicCta user={userData} showCreateDeck={!isOwner} />
         </div>
       </div>
 

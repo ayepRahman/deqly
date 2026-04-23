@@ -4,7 +4,10 @@ import type { Doc } from './_generated/dataModel'
 import { getUser } from './auth'
 
 const MAX_CARDS = 3
-const MAX_DESCRIPTION_LENGTH = 220
+const MAX_TITLE = 30
+const MAX_SUBTITLE = 35
+const MAX_SHOWCASE_DESCRIPTION = 155
+const MAX_STORY_DESCRIPTION = 220
 const MAX_STORY_BLOCKS = 2
 
 const storyBlockValidator = v.object({
@@ -68,6 +71,14 @@ export const createCard = mutation({
       throw new Error(`You can create up to ${MAX_CARDS} cards`)
     }
 
+    if (args.name && args.name.length > MAX_TITLE) {
+      throw new Error(`Name must be ${MAX_TITLE} characters or less`)
+    }
+
+    if (args.occupation && args.occupation.length > MAX_SUBTITLE) {
+      throw new Error(`Occupation must be ${MAX_SUBTITLE} characters or less`)
+    }
+
     const type = args.type
 
     const cardId = await ctx.db.insert('cards', {
@@ -103,14 +114,46 @@ export const updateCard = mutation({
       throw new Error('Card not found')
     }
 
-    if (args.description && args.description.length > MAX_DESCRIPTION_LENGTH) {
-      throw new Error(
-        `Description must be ${MAX_DESCRIPTION_LENGTH} characters or less`,
-      )
+    if (args.name && args.name.length > MAX_TITLE) {
+      throw new Error(`Name must be ${MAX_TITLE} characters or less`)
     }
 
-    if (args.storyBlocks && args.storyBlocks.length > MAX_STORY_BLOCKS) {
-      throw new Error(`Story cards can have up to ${MAX_STORY_BLOCKS} blocks`)
+    if (args.occupation && args.occupation.length > MAX_SUBTITLE) {
+      throw new Error(`Occupation must be ${MAX_SUBTITLE} characters or less`)
+    }
+
+    if (args.description !== undefined) {
+      const maxDescription =
+        card.type === 'story' ? MAX_STORY_DESCRIPTION : MAX_SHOWCASE_DESCRIPTION
+      if (args.description.length > maxDescription) {
+        throw new Error(
+          `Description must be ${maxDescription} characters or less`,
+        )
+      }
+    }
+
+    if (args.storyBlocks) {
+      if (args.storyBlocks.length > MAX_STORY_BLOCKS) {
+        throw new Error(`Story cards can have up to ${MAX_STORY_BLOCKS} blocks`)
+      }
+      for (const block of args.storyBlocks) {
+        if (block.title.length > MAX_TITLE) {
+          throw new Error(`Title must be ${MAX_TITLE} characters or less`)
+        }
+        if (block.subheader && block.subheader.length > MAX_SUBTITLE) {
+          throw new Error(
+            `Subheader must be ${MAX_SUBTITLE} characters or less`,
+          )
+        }
+        if (
+          block.description &&
+          block.description.length > MAX_STORY_DESCRIPTION
+        ) {
+          throw new Error(
+            `Description must be ${MAX_STORY_DESCRIPTION} characters or less`,
+          )
+        }
+      }
     }
 
     const { cardId, ...updates } = args

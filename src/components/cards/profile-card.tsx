@@ -9,7 +9,9 @@ import { FlipCard } from './flip-card'
 import {
   DEFAULT_CARD_COLOR,
   getProfileUrl,
-  MAX_DESCRIPTION,
+  MAX_SHOWCASE_DESCRIPTION,
+  MAX_SUBTITLE,
+  MAX_TITLE,
   type ProfileEditForm,
   type UserData,
 } from './types'
@@ -23,6 +25,7 @@ interface ProfileCardProps {
   editForm?: ProfileEditForm
   userData: UserData | null | undefined
   readOnly?: boolean
+  isActive?: boolean
   onImageClick?: () => void
   onStartEdit?: () => void
   onSaveEdit?: () => void
@@ -39,6 +42,7 @@ export function ProfileCard({
   editForm,
   userData,
   readOnly = false,
+  isActive = true,
   onImageClick,
   onStartEdit,
   onSaveEdit,
@@ -94,17 +98,23 @@ export function ProfileCard({
     <div className="flex flex-col gap-2.5">
       <input
         value={editForm.name}
-        onChange={(e) =>
-          onEditFormChange({ ...editForm, name: e.target.value })
-        }
+        onChange={(e) => {
+          if (e.target.value.length <= MAX_TITLE) {
+            onEditFormChange({ ...editForm, name: e.target.value })
+          }
+        }}
+        maxLength={MAX_TITLE}
         placeholder="Name"
         className="bg-transparent text-white font-bold text-xl border-b border-white/40 focus:border-white outline-none pb-0.5 touch-pan-y"
       />
       <input
         value={editForm.occupation}
-        onChange={(e) =>
-          onEditFormChange({ ...editForm, occupation: e.target.value })
-        }
+        onChange={(e) => {
+          if (e.target.value.length <= MAX_SUBTITLE) {
+            onEditFormChange({ ...editForm, occupation: e.target.value })
+          }
+        }}
+        maxLength={MAX_SUBTITLE}
         placeholder="Occupation"
         className="bg-transparent text-white text-base border-b border-white/40 focus:border-white outline-none pb-0.5 touch-pan-y"
       />
@@ -112,16 +122,17 @@ export function ProfileCard({
         <textarea
           value={editForm.description}
           onChange={(e) => {
-            if (e.target.value.length <= MAX_DESCRIPTION) {
+            if (e.target.value.length <= MAX_SHOWCASE_DESCRIPTION) {
               onEditFormChange({ ...editForm, description: e.target.value })
             }
           }}
-          placeholder="Add a description about yourself. Make it memorable within 220 characters"
+          maxLength={MAX_SHOWCASE_DESCRIPTION}
+          placeholder="Add a description about yourself. Make it memorable within 155 characters"
           rows={3}
           className="w-full bg-transparent text-white text-base outline outline-1 outline-white rounded-[10px] p-[5px] focus:outline-white/80 resize-none opacity-60 focus:opacity-100 touch-pan-y"
         />
         <span className="absolute bottom-2 right-2 text-xs text-white/50">
-          {editForm.description.length}/{MAX_DESCRIPTION}
+          {editForm.description.length}/{MAX_SHOWCASE_DESCRIPTION}
         </span>
       </div>
       <ColorPicker
@@ -144,7 +155,7 @@ export function ProfileCard({
       <div className="rounded-[10px] p-[5px] opacity-60 h-20 overflow-hidden">
         <p className="text-white text-sm">
           {user.description ||
-            'Add a description about yourself. Make it memorable within 220 characters'}
+            'Add a description about yourself. Make it memorable within 155 characters'}
         </p>
       </div>
     </div>
@@ -162,7 +173,7 @@ export function ProfileCard({
       <div
         className={`${hasImage ? 'absolute top-0 left-0 right-0 z-10' : 'relative'} flex items-center justify-center h-${hasImage ? '12' : '8'} ${hasImage ? 'px-2' : ''} ${!hasImage ? 'mb-3' : ''}`}
       >
-        {!readOnly && (
+        {!readOnly && isActive && (
           <div className={hasImage ? 'absolute left-2' : 'absolute left-0'}>
             {isEditing ? (
               <Button
@@ -245,37 +256,28 @@ export function ProfileCard({
           }
         />
 
-        <div className="flex justify-center gap-7 mt-4 w-80">
-          {isFlipped ? (
-            <>
-              <button type="button" onClick={handleCopyLink} className="flex flex-col items-center gap-1 w-16">
-                <Link className="w-7 h-7 text-neutral-700" />
-                <span className="text-sm text-black">{copied ? 'Copied!' : 'Copy link'}</span>
-              </button>
-              <button type="button" onClick={handleNativeShare} className="flex flex-col items-center gap-1 w-16">
-                <Upload className="w-7 h-7 text-neutral-700" />
-                <span className="text-sm text-black">Share</span>
-              </button>
-            </>
-          ) : isEditing ? (
-            <Button
-              onClick={onSaveEdit}
-              className="bg-brand-teal flex-1"
-              size="lg"
-            >
-              Save Changes
-            </Button>
-          ) : readOnly ? (
-            <Button
-              onClick={() => setIsFlipped(true)}
-              className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5"
-              size="lg"
-            >
-              <Share2 className="w-4 h-4" />
-              Share
-            </Button>
-          ) : (
-            <>
+        {(isActive || isFlipped || isEditing) && (
+          <div className="flex justify-center gap-7 mt-4 w-80">
+            {isFlipped ? (
+              <>
+                <button type="button" onClick={handleCopyLink} className="flex flex-col items-center gap-1 w-16">
+                  <Link className="w-7 h-7 text-neutral-700" />
+                  <span className="text-sm text-black">{copied ? 'Copied!' : 'Copy link'}</span>
+                </button>
+                <button type="button" onClick={handleNativeShare} className="flex flex-col items-center gap-1 w-16">
+                  <Upload className="w-7 h-7 text-neutral-700" />
+                  <span className="text-sm text-black">Share</span>
+                </button>
+              </>
+            ) : isEditing ? (
+              <Button
+                onClick={onSaveEdit}
+                className="bg-brand-teal flex-1"
+                size="lg"
+              >
+                Save Changes
+              </Button>
+            ) : readOnly ? (
               <Button
                 onClick={() => setIsFlipped(true)}
                 className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5"
@@ -284,17 +286,28 @@ export function ProfileCard({
                 <Share2 className="w-4 h-4" />
                 Share
               </Button>
-              <Button
-                onClick={onStartEdit}
-                className="flex-1 bg-brand-teal hover:bg-teal-600 gap-1.5"
-                size="lg"
-              >
-                <Pencil className="w-4 h-4" />
-                Edit
-              </Button>
-            </>
-          )}
-        </div>
+            ) : (
+              <>
+                <Button
+                  onClick={() => setIsFlipped(true)}
+                  className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5"
+                  size="lg"
+                >
+                  <Share2 className="w-4 h-4" />
+                  Share
+                </Button>
+                <Button
+                  onClick={onStartEdit}
+                  className="flex-1 bg-brand-teal hover:bg-teal-600 gap-1.5"
+                  size="lg"
+                >
+                  <Pencil className="w-4 h-4" />
+                  Edit
+                </Button>
+              </>
+            )}
+          </div>
+        )}
       </div>
     )
   }
@@ -356,37 +369,28 @@ export function ProfileCard({
         }
       />
 
-      <div className="flex justify-center gap-7 mt-4 w-80">
-        {isFlipped ? (
-          <>
-            <button type="button" onClick={handleCopyLink} className="flex flex-col items-center gap-1 w-16">
-              <Link className="w-7 h-7 text-neutral-700" />
-              <span className="text-sm text-black">{copied ? 'Copied!' : 'Copy link'}</span>
-            </button>
-            <button type="button" onClick={handleNativeShare} className="flex flex-col items-center gap-1 w-16">
-              <Upload className="w-7 h-7 text-neutral-700" />
-              <span className="text-sm text-black">Share</span>
-            </button>
-          </>
-        ) : isEditing ? (
-          <Button
-            onClick={onSaveEdit}
-            className="bg-brand-teal flex-1"
-            size="lg"
-          >
-            Save Changes
-          </Button>
-        ) : readOnly ? (
-          <Button
-            onClick={() => setIsFlipped(true)}
-            className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5"
-            size="lg"
-          >
-            <Share2 className="w-4 h-4" />
-            Share
-          </Button>
-        ) : (
-          <>
+      {(isActive || isFlipped || isEditing) && (
+        <div className="flex justify-center gap-7 mt-4 w-80">
+          {isFlipped ? (
+            <>
+              <button type="button" onClick={handleCopyLink} className="flex flex-col items-center gap-1 w-16">
+                <Link className="w-7 h-7 text-neutral-700" />
+                <span className="text-sm text-black">{copied ? 'Copied!' : 'Copy link'}</span>
+              </button>
+              <button type="button" onClick={handleNativeShare} className="flex flex-col items-center gap-1 w-16">
+                <Upload className="w-7 h-7 text-neutral-700" />
+                <span className="text-sm text-black">Share</span>
+              </button>
+            </>
+          ) : isEditing ? (
+            <Button
+              onClick={onSaveEdit}
+              className="bg-brand-teal flex-1"
+              size="lg"
+            >
+              Save Changes
+            </Button>
+          ) : readOnly ? (
             <Button
               onClick={() => setIsFlipped(true)}
               className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5"
@@ -395,17 +399,28 @@ export function ProfileCard({
               <Share2 className="w-4 h-4" />
               Share
             </Button>
-            <Button
-              onClick={onStartEdit}
-              className="flex-1 bg-brand-teal hover:bg-teal-600 gap-1.5"
-              size="lg"
-            >
-              <Pencil className="w-4 h-4" />
-              Edit
-            </Button>
-          </>
-        )}
-      </div>
+          ) : (
+            <>
+              <Button
+                onClick={() => setIsFlipped(true)}
+                className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5"
+                size="lg"
+              >
+                <Share2 className="w-4 h-4" />
+                Share
+              </Button>
+              <Button
+                onClick={onStartEdit}
+                className="flex-1 bg-brand-teal hover:bg-teal-600 gap-1.5"
+                size="lg"
+              >
+                <Pencil className="w-4 h-4" />
+                Edit
+              </Button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }

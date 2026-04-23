@@ -292,6 +292,7 @@ function AppHome() {
           card={card}
           index={index}
           total={totalCards}
+          isActive={activeIndex === index}
           storyEditForm={storyEditForm}
           userData={currentUser}
           onStoryFormChange={setStoryEditForm}
@@ -306,6 +307,7 @@ function AppHome() {
         card={card}
         index={index}
         total={totalCards}
+        isActive={activeIndex === index}
         isUploading={isUploading}
         showcaseEditForm={showcaseEditForm}
         userData={currentUser}
@@ -321,6 +323,7 @@ function AppHome() {
       user={currentUser ?? { email: '' }}
       index={0}
       total={totalCards}
+      isActive={totalCards === 1 || activeIndex === 0}
       isUploading={isUploading}
       isEditing={isEditingProfileCard}
       editForm={profileEditForm}

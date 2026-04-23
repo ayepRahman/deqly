@@ -18,7 +18,9 @@ import {
   type CardData,
   DEFAULT_CARD_COLOR,
   getProfileUrl,
-  MAX_DESCRIPTION,
+  MAX_SHOWCASE_DESCRIPTION,
+  MAX_SUBTITLE,
+  MAX_TITLE,
   type ShowcaseEditForm,
   type UserData,
 } from './types'
@@ -32,6 +34,7 @@ interface ShowcaseCardProps {
   showcaseEditForm?: ShowcaseEditForm
   userData: UserData | null | undefined
   readOnly?: boolean
+  isActive?: boolean
   onImageClick?: () => void
   onStartEdit?: (card: CardData) => void
   onSaveEdit?: () => void
@@ -86,6 +89,7 @@ export function ShowcaseCard({
   showcaseEditForm,
   userData,
   readOnly = false,
+  isActive = true,
   onImageClick,
   onStartEdit,
   onSaveEdit,
@@ -145,20 +149,29 @@ export function ShowcaseCard({
     <div className="flex flex-col gap-2.5">
       <input
         value={showcaseEditForm.name}
-        onChange={(e) =>
-          onShowcaseFormChange({ ...showcaseEditForm, name: e.target.value })
-        }
+        onChange={(e) => {
+          if (e.target.value.length <= MAX_TITLE) {
+            onShowcaseFormChange({
+              ...showcaseEditForm,
+              name: e.target.value,
+            })
+          }
+        }}
+        maxLength={MAX_TITLE}
         placeholder="Name"
         className="bg-transparent text-white font-bold text-xl border-b border-white/40 focus:border-white outline-none pb-0.5 touch-pan-y"
       />
       <input
         value={showcaseEditForm.occupation}
-        onChange={(e) =>
-          onShowcaseFormChange({
-            ...showcaseEditForm,
-            occupation: e.target.value,
-          })
-        }
+        onChange={(e) => {
+          if (e.target.value.length <= MAX_SUBTITLE) {
+            onShowcaseFormChange({
+              ...showcaseEditForm,
+              occupation: e.target.value,
+            })
+          }
+        }}
+        maxLength={MAX_SUBTITLE}
         placeholder="Occupation"
         className="bg-transparent text-white text-base border-b border-white/40 focus:border-white outline-none pb-0.5 touch-pan-y"
       />
@@ -166,19 +179,20 @@ export function ShowcaseCard({
         <textarea
           value={showcaseEditForm.description}
           onChange={(e) => {
-            if (e.target.value.length <= MAX_DESCRIPTION) {
+            if (e.target.value.length <= MAX_SHOWCASE_DESCRIPTION) {
               onShowcaseFormChange({
                 ...showcaseEditForm,
                 description: e.target.value,
               })
             }
           }}
-          placeholder="Add a description of your card here. Explain your project as best as you can within 220 characters thats leaves a good impact"
+          maxLength={MAX_SHOWCASE_DESCRIPTION}
+          placeholder="Add a description of your card here. Explain your project as best as you can within 155 characters thats leaves a good impact"
           rows={3}
           className="w-full bg-transparent text-white text-base outline outline-1 outline-white rounded-[10px] p-[5px] focus:outline-white/80 resize-none opacity-60 focus:opacity-100 touch-pan-y"
         />
         <span className="absolute bottom-2 right-2 text-xs text-white/50">
-          {showcaseEditForm.description.length}/{MAX_DESCRIPTION}
+          {showcaseEditForm.description.length}/{MAX_SHOWCASE_DESCRIPTION}
         </span>
       </div>
       <ColorPicker
@@ -203,7 +217,7 @@ export function ShowcaseCard({
       <div className="rounded-[10px] p-[5px] opacity-60 h-20 overflow-hidden">
         <p className="text-white text-sm">
           {card.description ||
-            'Add a description of your card here. Explain your project as best as you can within 220 characters thats leaves a good impact'}
+            'Add a description of your card here. Explain your project as best as you can within 155 characters thats leaves a good impact'}
         </p>
       </div>
     </div>
@@ -214,7 +228,7 @@ export function ShowcaseCard({
       <div className="w-80 h-[576px] relative rounded-[20px] outline outline-2 outline-neutral-200 overflow-hidden">
         {/* Top bar overlay */}
         <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center h-12 px-2">
-          {!readOnly && (
+          {!readOnly && isActive && (
             <div className="absolute left-2">
               {isEditing ? (
                 <Button
@@ -240,7 +254,7 @@ export function ShowcaseCard({
           <span className="text-white/80 text-sm font-medium">
             {index + 1}/{total}
           </span>
-          {!readOnly && !isEditing && (
+          {!readOnly && !isEditing && isActive && (
             <div className="absolute right-2">
               <Button
                 onClick={() => setConfirmDelete(true)}
@@ -304,40 +318,42 @@ export function ShowcaseCard({
           }
         />
 
-        <div className="flex justify-center gap-7 mt-4 w-80">
-          {isFlipped ? (
-            <>
-              <button type="button" onClick={handleCopyLink} className="flex flex-col items-center gap-1 w-16">
-                <Link className="w-7 h-7 text-neutral-700" />
-                <span className="text-sm text-black">{copied ? 'Copied!' : 'Copy link'}</span>
-              </button>
-              <button type="button" onClick={handleNativeShare} className="flex flex-col items-center gap-1 w-16">
-                <Upload className="w-7 h-7 text-neutral-700" />
-                <span className="text-sm text-black">Share</span>
-              </button>
-            </>
-          ) : isEditing ? (
-            <Button onClick={onSaveEdit} className="bg-brand-teal flex-1" size="lg">
-              Save Changes
-            </Button>
-          ) : readOnly ? (
-            <Button onClick={() => setIsFlipped(true)} className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5" size="lg">
-              <Share2 className="w-4 h-4" />
-              Share
-            </Button>
-          ) : (
-            <>
+        {(isActive || isFlipped || isEditing) && (
+          <div className="flex justify-center gap-7 mt-4 w-80">
+            {isFlipped ? (
+              <>
+                <button type="button" onClick={handleCopyLink} className="flex flex-col items-center gap-1 w-16">
+                  <Link className="w-7 h-7 text-neutral-700" />
+                  <span className="text-sm text-black">{copied ? 'Copied!' : 'Copy link'}</span>
+                </button>
+                <button type="button" onClick={handleNativeShare} className="flex flex-col items-center gap-1 w-16">
+                  <Upload className="w-7 h-7 text-neutral-700" />
+                  <span className="text-sm text-black">Share</span>
+                </button>
+              </>
+            ) : isEditing ? (
+              <Button onClick={onSaveEdit} className="bg-brand-teal flex-1" size="lg">
+                Save Changes
+              </Button>
+            ) : readOnly ? (
               <Button onClick={() => setIsFlipped(true)} className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5" size="lg">
                 <Share2 className="w-4 h-4" />
                 Share
               </Button>
-              <Button onClick={() => onStartEdit?.(card)} className="flex-1 bg-brand-teal hover:bg-teal-600 gap-1.5" size="lg">
-                <Pencil className="w-4 h-4" />
-                Edit
-              </Button>
-            </>
-          )}
-        </div>
+            ) : (
+              <>
+                <Button onClick={() => setIsFlipped(true)} className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5" size="lg">
+                  <Share2 className="w-4 h-4" />
+                  Share
+                </Button>
+                <Button onClick={() => onStartEdit?.(card)} className="flex-1 bg-brand-teal hover:bg-teal-600 gap-1.5" size="lg">
+                  <Pencil className="w-4 h-4" />
+                  Edit
+                </Button>
+              </>
+            )}
+          </div>
+        )}
 
         <DeleteConfirmDialog
           open={confirmDelete}
@@ -357,7 +373,7 @@ export function ShowcaseCard({
       <div className="bg-white flex-1 pt-5 px-4 pb-4 flex flex-col">
         {/* Top bar */}
         <div className="relative flex items-center justify-center h-8 mb-3">
-          {!readOnly && (
+          {!readOnly && isActive && (
             <div className="absolute left-0">
               {isEditing ? (
                 <Button
@@ -383,7 +399,7 @@ export function ShowcaseCard({
           <span className="text-neutral-300 text-sm font-medium">
             {index + 1}/{total}
           </span>
-          {!readOnly && !isEditing && (
+          {!readOnly && !isEditing && isActive && (
             <div className="absolute right-0">
               <Button
                 onClick={() => setConfirmDelete(true)}
@@ -449,40 +465,42 @@ export function ShowcaseCard({
         }
       />
 
-      <div className="flex justify-center gap-7 mt-4 w-80">
-        {isFlipped ? (
-          <>
-            <button type="button" onClick={handleCopyLink} className="flex flex-col items-center gap-1 w-16">
-              <Link className="w-7 h-7 text-neutral-700" />
-              <span className="text-sm text-black">{copied ? 'Copied!' : 'Copy link'}</span>
-            </button>
-            <button type="button" onClick={handleNativeShare} className="flex flex-col items-center gap-1 w-16">
-              <Upload className="w-7 h-7 text-neutral-700" />
-              <span className="text-sm text-black">Share</span>
-            </button>
-          </>
-        ) : isEditing ? (
-          <Button onClick={onSaveEdit} className="bg-brand-teal flex-1" size="lg">
-            Save Changes
-          </Button>
-        ) : readOnly ? (
-          <Button onClick={() => setIsFlipped(true)} className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5" size="lg">
-            <Share2 className="w-4 h-4" />
-            Share
-          </Button>
-        ) : (
-          <>
+      {(isActive || isFlipped || isEditing) && (
+        <div className="flex justify-center gap-7 mt-4 w-80">
+          {isFlipped ? (
+            <>
+              <button type="button" onClick={handleCopyLink} className="flex flex-col items-center gap-1 w-16">
+                <Link className="w-7 h-7 text-neutral-700" />
+                <span className="text-sm text-black">{copied ? 'Copied!' : 'Copy link'}</span>
+              </button>
+              <button type="button" onClick={handleNativeShare} className="flex flex-col items-center gap-1 w-16">
+                <Upload className="w-7 h-7 text-neutral-700" />
+                <span className="text-sm text-black">Share</span>
+              </button>
+            </>
+          ) : isEditing ? (
+            <Button onClick={onSaveEdit} className="bg-brand-teal flex-1" size="lg">
+              Save Changes
+            </Button>
+          ) : readOnly ? (
             <Button onClick={() => setIsFlipped(true)} className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5" size="lg">
               <Share2 className="w-4 h-4" />
               Share
             </Button>
-            <Button onClick={() => onStartEdit?.(card)} className="flex-1 bg-brand-teal hover:bg-teal-600 gap-1.5" size="lg">
-              <Pencil className="w-4 h-4" />
-              Edit
-            </Button>
-          </>
-        )}
-      </div>
+          ) : (
+            <>
+              <Button onClick={() => setIsFlipped(true)} className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5" size="lg">
+                <Share2 className="w-4 h-4" />
+                Share
+              </Button>
+              <Button onClick={() => onStartEdit?.(card)} className="flex-1 bg-brand-teal hover:bg-teal-600 gap-1.5" size="lg">
+                <Pencil className="w-4 h-4" />
+                Edit
+              </Button>
+            </>
+          )}
+        </div>
+      )}
 
       <DeleteConfirmDialog
         open={confirmDelete}

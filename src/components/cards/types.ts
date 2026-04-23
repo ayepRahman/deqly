@@ -1,7 +1,10 @@
 import type { Id } from '../../../convex/_generated/dataModel'
 
 export const MAX_CARDS = 3
-export const MAX_DESCRIPTION = 220
+export const MAX_TITLE = 30
+export const MAX_SUBTITLE = 35
+export const MAX_SHOWCASE_DESCRIPTION = 155
+export const MAX_STORY_DESCRIPTION = 220
 export const MAX_STORY_BLOCKS = 2
 
 export const CARD_COLORS = [

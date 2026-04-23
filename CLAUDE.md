@@ -89,7 +89,7 @@ TanStack Router with file-based routing under `src/routes/`. Auto-generated rout
 **`users`** — app user profile, created via `auth.ts` `onCreate` trigger. Indexed by `email` and `username`.
 
 **`cards`** — up to 3 cards per user, each with `type: "showcase" | "story"`.
-- `showcase` cards: image (Cloudflare ID), name, description (max 220 chars)
+- `showcase` cards: image (Cloudflare ID), name (max 30), occupation (max 35), description (max 155)
 - `story` cards: up to 2 `storyBlocks` (title, subheader, description)
 - `order` field maintained after deletes
 
@@ -129,4 +129,4 @@ Route files (`src/routes/`) must only contain the route definition and page-leve
 
 - Convex queries/mutations are accessed via the auto-generated `api` object: `import { api } from "../convex/_generated/api"`
 - Auth helpers `getUser` (throws if unauthenticated) and `safeGetUser` (returns null) are used at the start of every protected mutation/query
-- Business limits are defined as constants in `convex/cards.ts` and `src/components/cards/types.ts` — keep them in sync: `MAX_CARDS=3`, `MAX_DESCRIPTION=220`, `MAX_STORY_BLOCKS=2`
+- Business limits are defined as constants in `convex/cards.ts` and `src/components/cards/types.ts` — keep them in sync: `MAX_CARDS=3`, `MAX_TITLE=30`, `MAX_SUBTITLE=35`, `MAX_SHOWCASE_DESCRIPTION=155`, `MAX_STORY_DESCRIPTION=220`, `MAX_STORY_BLOCKS=2`
