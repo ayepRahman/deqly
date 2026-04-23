@@ -5,9 +5,10 @@ import { getUser } from './auth'
 export const getByUsername = query({
   args: { username: v.string() },
   handler: async (ctx, args) => {
+    const normalized = args.username.toLowerCase().trim()
     const user = await ctx.db
       .query('users')
-      .withIndex('by_username', (q) => q.eq('username', args.username))
+      .withIndex('by_username', (q) => q.eq('username', normalized))
       .first()
 
     if (!user) {

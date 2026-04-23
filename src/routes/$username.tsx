@@ -2,6 +2,7 @@
 
 import { convexQuery } from '@convex-dev/react-query'
 import { Link, createFileRoute } from '@tanstack/react-router'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { useQuery } from 'convex/react'
 import useEmblaCarousel from 'embla-carousel-react'
 import { Pencil } from 'lucide-react'
@@ -14,6 +15,7 @@ import type { CardData, UserData } from '~/components/cards/types'
 import { PageFooter } from '~/components/login/page-footer'
 import { NotFoundView } from '~/components/not-found-view'
 import { Button } from '~/components/ui/button'
+import { PageLoader } from '~/components/ui/page-loader'
 import { api } from '../../convex/_generated/api'
 
 export const Route = createFileRoute('/$username')({
@@ -65,12 +67,15 @@ export const Route = createFileRoute('/$username')({
       links: [{ rel: 'canonical', href: canonicalUrl }],
     }
   },
+  pendingComponent: () => <PageLoader />,
   component: PublicProfile,
 })
 
 function PublicProfile() {
   const { username } = Route.useParams()
-  const profileUser = useQuery(api.users.getByUsername, { username })
+  const { data: profileUser } = useSuspenseQuery(
+    convexQuery(api.users.getByUsername, { username }),
+  )
   const currentUser = useQuery(api.auth.getCurrentUser)
 
   const cards = useQuery(
@@ -98,14 +103,6 @@ function PublicProfile() {
       emblaApi.off('select', onSelect)
     }
   }, [emblaApi, onSelect])
-
-  if (profileUser === undefined) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
-      </div>
-    )
-  }
 
   if (profileUser === null) {
     return <NotFoundView />

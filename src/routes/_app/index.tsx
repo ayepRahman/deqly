@@ -18,6 +18,7 @@ import { ImageCropDialog } from '~/components/forms/image-crop-dialog'
 import { SelectCardTypeDialog } from '~/components/forms/select-card-type-dialog'
 import { PageFooter } from '~/components/login/page-footer'
 import { Button } from '~/components/ui/button'
+import { PageLoader } from '~/components/ui/page-loader'
 import { ProfileDropdown } from '~/components/ui/profile-dropdown'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -272,11 +273,7 @@ function AppHome() {
   }
 
   if (currentUser === undefined) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <p className="text-neutral-400">Loading...</p>
-      </div>
-    )
+    return <PageLoader />
   }
 
   const sharedCardProps = {

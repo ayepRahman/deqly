@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import { useState } from 'react'
 import { ProfileForm } from '~/components/forms/profile-form'
+import { PageLoader } from '~/components/ui/page-loader'
 import type { ProfileValues } from '~/lib/validations'
 import { api } from '../../../convex/_generated/api'
 
@@ -37,11 +38,7 @@ function ProfilePage() {
   }
 
   if (currentUser === undefined) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center bg-white">
-        <p className="text-neutral-400">Loading...</p>
-      </div>
-    )
+    return <PageLoader />
   }
 
   if (!currentUser) {

@@ -1,5 +1,6 @@
 import { useQuery } from 'convex/react'
 import { createFileRoute, Outlet, redirect, useNavigate } from '@tanstack/react-router'
+import { PageLoader } from '~/components/ui/page-loader'
 import { api } from '../../convex/_generated/api'
 
 export const Route = createFileRoute('/_app')({
@@ -17,11 +18,7 @@ function AppLayout() {
 
   // Still loading user data
   if (currentUser === undefined) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center bg-white">
-        <p className="text-neutral-400">Loading...</p>
-      </div>
-    )
+    return <PageLoader />
   }
 
   // User exists but hasn't completed onboarding

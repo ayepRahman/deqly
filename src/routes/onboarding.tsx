@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useAppForm } from '~/components/forms/form'
 import { PageFooter } from '~/components/login/page-footer'
 import { Button } from '~/components/ui/button'
+import { PageLoader } from '~/components/ui/page-loader'
 import { type OnboardingValues, onboardingSchema } from '~/lib/validations'
 import { api } from '../../convex/_generated/api'
 
@@ -58,11 +59,7 @@ function OnboardingPage() {
   }
 
   if (currentUser === undefined) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center bg-white">
-        <p className="text-neutral-400">Loading...</p>
-      </div>
-    )
+    return <PageLoader />
   }
 
   return <OnboardingForm loading={loading} error={error} onSubmit={handleSubmit} />
