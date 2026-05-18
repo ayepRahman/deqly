@@ -230,7 +230,9 @@ function PublicProfile() {
             </div>
           )}
 
-          <PublicCta user={userData} showCreateDeck={!isOwner} />
+          {(totalCards === 1 || activeIndex === 0) && (
+            <PublicCta user={userData} showCreateDeck={!isOwner} />
+          )}
         </div>
       </div>
 
