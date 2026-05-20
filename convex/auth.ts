@@ -2,20 +2,20 @@ import {
   type AuthFunctions,
   createClient,
   type GenericCtx,
-} from '@convex-dev/better-auth'
-import { convex } from '@convex-dev/better-auth/plugins'
-import { type BetterAuthOptions, betterAuth } from 'better-auth/minimal'
-import { magicLink } from 'better-auth/plugins/magic-link'
-import { ConvexError } from 'convex/values'
-import { Resend } from 'resend'
-import { components, internal } from './_generated/api'
-import type { DataModel, Id } from './_generated/dataModel'
-import { type MutationCtx, type QueryCtx, query } from './_generated/server'
-import authConfig from './auth.config'
+} from "@convex-dev/better-auth";
+import { convex } from "@convex-dev/better-auth/plugins";
+import { type BetterAuthOptions, betterAuth } from "better-auth/minimal";
+import { magicLink } from "better-auth/plugins/magic-link";
+import { ConvexError } from "convex/values";
+import { Resend } from "resend";
+import { components, internal } from "./_generated/api";
+import type { DataModel, Id } from "./_generated/dataModel";
+import { type MutationCtx, type QueryCtx, query } from "./_generated/server";
+import authConfig from "./auth.config";
 
-const siteUrl = process.env.SITE_URL
+const siteUrl = process.env.SITE_URL;
 
-const authFunctions: AuthFunctions = internal.auth
+const authFunctions: AuthFunctions = internal.auth;
 
 export const authComponent = createClient<DataModel>(components.betterAuth, {
   authFunctions,
@@ -23,37 +23,42 @@ export const authComponent = createClient<DataModel>(components.betterAuth, {
   triggers: {
     user: {
       onCreate: async (ctx, authUser) => {
-        const userId = await ctx.db.insert('users', {
+        const userId = await ctx.db.insert("users", {
           email: authUser.email,
-        })
-        await authComponent.setUserId(ctx, authUser._id, userId)
+        });
+        await authComponent.setUserId(ctx, authUser._id, userId);
       },
       onUpdate: async (ctx, newUser, oldUser) => {
         if (oldUser.email === newUser.email) {
-          return
+          return;
         }
-        await ctx.db.patch(newUser.userId as Id<'users'>, {
+        await ctx.db.patch(newUser.userId as Id<"users">, {
           email: newUser.email,
-        })
+        });
       },
       onDelete: async (ctx, authUser) => {
-        const user = await ctx.db.get(authUser.userId as Id<'users'>)
+        const user = await ctx.db.get(authUser.userId as Id<"users">);
         if (!user) {
-          return
+          return;
         }
-        await ctx.db.delete(user._id)
+        await ctx.db.delete(user._id);
       },
     },
   },
-})
+});
 
-export const { onCreate, onUpdate, onDelete } = authComponent.triggersApi()
+export const { onCreate, onUpdate, onDelete } = authComponent.triggersApi();
 
-export const { getAuthUser } = authComponent.clientApi()
+export const { getAuthUser } = authComponent.clientApi();
 
 export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
   ({
     baseURL: siteUrl,
+    trustedOrigins: [
+      siteUrl,
+      "http://localhost:3000",
+      "http://localhost:5173",
+    ].filter((origin): origin is string => Boolean(origin)),
     secret: process.env.BETTER_AUTH_SECRET,
     database: authComponent.adapter(ctx),
     emailAndPassword: {
@@ -62,22 +67,22 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
     user: {
       additionalFields: {
         username: {
-          type: 'string',
+          type: "string",
           required: false,
           input: true,
         },
         occupation: {
-          type: 'string',
+          type: "string",
           required: false,
           input: true,
         },
         mobileNumber: {
-          type: 'string',
+          type: "string",
           required: false,
           input: true,
         },
         websiteLink: {
-          type: 'string',
+          type: "string",
           required: false,
           input: true,
         },
@@ -86,24 +91,21 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
     plugins: [
       magicLink({
         sendMagicLink: async ({ email, url }) => {
-          const resend = new Resend(process.env.RESEND_API_KEY)
+          console.log("Sending magic link to", email, url);
+          const resend = new Resend(process.env.RESEND_API_KEY);
+          const templateId = "deqlys-magic-link";
           await resend.emails.send({
-            from: process.env.EMAIL_FROM ?? 'Deqly <noreply@deqly.com>',
+            from: process.env.EMAIL_FROM ?? "Deqly <noreply@deqly.com>",
             to: email,
-            subject: 'Sign in to Deqly',
-            html: `
-              <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
-                <h2>Sign in to Deqly</h2>
-                <p>Click the link below to sign in to your account:</p>
-                <a href="${url}" style="display: inline-block; padding: 12px 24px; background: #000; color: #fff; text-decoration: none; border-radius: 6px;">
-                  Sign in to Deqly
-                </a>
-                <p style="color: #666; font-size: 14px; margin-top: 16px;">
-                  If you didn't request this, you can safely ignore this email.
-                </p>
-              </div>
-            `,
-          })
+            subject: "Sign in to Deqly",
+            template: {
+              id: templateId,
+              variables: {
+                MAGIC_LINK: url,
+                EMAIL: email,
+              },
+            },
+          });
         },
         expiresIn: 600,
       }),
@@ -111,44 +113,44 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
         authConfig,
       }),
     ],
-  }) satisfies BetterAuthOptions
+  }) satisfies BetterAuthOptions;
 
 export const createAuth = (ctx: GenericCtx<DataModel>) =>
-  betterAuth(createAuthOptions(ctx))
+  betterAuth(createAuthOptions(ctx));
 
 export const safeGetUser = async (ctx: QueryCtx | MutationCtx) => {
-  const authUser = await authComponent.safeGetAuthUser(ctx)
+  const authUser = await authComponent.safeGetAuthUser(ctx);
   if (!authUser) {
-    return null
+    return null;
   }
-  const user = await ctx.db.get(authUser.userId as Id<'users'>)
+  const user = await ctx.db.get(authUser.userId as Id<"users">);
   if (!user) {
-    return null
+    return null;
   }
-  return { ...user, authId: authUser._id, name: user.name ?? authUser.name }
-}
+  return { ...user, authId: authUser._id, name: user.name ?? authUser.name };
+};
 
 export const getUser = async (ctx: QueryCtx | MutationCtx) => {
-  const user = await safeGetUser(ctx)
+  const user = await safeGetUser(ctx);
   if (!user) {
-    throw new ConvexError('Unauthenticated')
+    throw new ConvexError("Unauthenticated");
   }
-  return user
-}
+  return user;
+};
 
 export const getCurrentUser = query({
   args: {},
   handler: async (ctx) => {
-    const user = await safeGetUser(ctx)
+    const user = await safeGetUser(ctx);
     if (!user) {
-      return null
+      return null;
     }
     const avatarImageUrl = user.avatarImageId
       ? await ctx.storage.getUrl(user.avatarImageId)
-      : null
+      : null;
     const bannerImageUrl = user.bannerImageId
       ? await ctx.storage.getUrl(user.bannerImageId)
-      : null
-    return { ...user, avatarImageUrl, bannerImageUrl }
+      : null;
+    return { ...user, avatarImageUrl, bannerImageUrl };
   },
-})
+});

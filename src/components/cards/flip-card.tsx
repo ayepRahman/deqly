@@ -13,6 +13,7 @@ export function FlipCard({ isFlipped, front, back, className }: FlipCardProps) {
       <div style={{ position: 'relative' }}>
         {/* Front face */}
         <motion.div
+          initial={false}
           animate={{ rotateY: isFlipped ? 180 : 0 }}
           transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
           style={{
@@ -26,6 +27,7 @@ export function FlipCard({ isFlipped, front, back, className }: FlipCardProps) {
 
         {/* Back face */}
         <motion.div
+          initial={false}
           animate={{ rotateY: isFlipped ? 0 : -180 }}
           transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
           style={{

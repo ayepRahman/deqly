@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import useEmblaCarousel from 'embla-carousel-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { CardActions } from '~/components/cards/card-actions'
 import { AddCardIcon } from '~/components/cards/card-icons'
 import { ProfileCard } from '~/components/cards/profile-card'
 import { ShowcaseCard } from '~/components/cards/showcase-card'
@@ -9,6 +10,7 @@ import { StoryCard } from '~/components/cards/story-card'
 import {
   type CardData,
   DEFAULT_CARD_COLOR,
+  getProfileUrl,
   MAX_CARDS,
   type ProfileEditForm,
   type ShowcaseEditForm,
@@ -46,6 +48,8 @@ function AppHome() {
   const [activeIndex, setActiveIndex] = useState(0)
   const [editingCardId, setEditingCardId] = useState<Id<'cards'> | null>(null)
   const [isEditingProfileCard, setIsEditingProfileCard] = useState(false)
+  const [isFlipped, setIsFlipped] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [profileEditForm, setProfileEditForm] = useState<ProfileEditForm>({
     name: '',
     occupation: '',
@@ -87,6 +91,7 @@ function AppHome() {
   const onSelect = useCallback(() => {
     if (!emblaApi) return
     setActiveIndex(emblaApi.selectedScrollSnap())
+    setIsFlipped(false)
   }, [emblaApi])
 
   useEffect(() => {
@@ -96,6 +101,26 @@ function AppHome() {
       emblaApi.off('select', onSelect)
     }
   }, [emblaApi, onSelect])
+
+  const profileUrl = getProfileUrl(currentUser?.username)
+
+  const handleCopyLink = useCallback(async () => {
+    if (!profileUrl) return
+    await navigator.clipboard.writeText(profileUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }, [profileUrl])
+
+  const handleNativeShare = useCallback(async () => {
+    if (!profileUrl) return
+    if (navigator.share) {
+      await navigator.share({ url: profileUrl })
+    } else {
+      await navigator.clipboard.writeText(profileUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }, [profileUrl])
 
   const handleAddCard = async (type: 'showcase' | 'story') => {
     if (cards.length >= MAX_CARDS) return
@@ -113,6 +138,7 @@ function AppHome() {
   const handleStartProfileEdit = () => {
     setIsEditingProfileCard(true)
     setEditingCardId(null)
+    setIsFlipped(false)
     emblaApi?.scrollTo(0, true)
     setProfileEditForm({
       name: currentUser?.name ?? '',
@@ -142,6 +168,7 @@ function AppHome() {
   const handleStartEdit = (card: CardData) => {
     setEditingCardId(card._id)
     setIsEditingProfileCard(false)
+    setIsFlipped(false)
     const cardIndex = cards.findIndex((c) => c._id === card._id)
     if (cardIndex >= 0) {
       emblaApi?.scrollTo(cardIndex + 1, true)
@@ -276,15 +303,23 @@ function AppHome() {
     return <PageLoader />
   }
 
+  const activeCard: CardData | undefined =
+    activeIndex > 0 ? cards[activeIndex - 1] : undefined
+  const isProfileActive = activeIndex === 0
+  const isActiveEditing = isProfileActive
+    ? isEditingProfileCard
+    : Boolean(activeCard && editingCardId === activeCard._id)
+
   const sharedCardProps = {
     editingCardId,
     onStartEdit: handleStartEdit,
-    onSaveEdit: handleSaveEdit,
     onCancelEdit: handleCancelEdit,
     onDeleteCard: handleDeleteCard,
+    onCloseFlip: () => setIsFlipped(false),
   }
 
   function renderCard(card: CardData, index: number) {
+    const cardIsActive = activeIndex === index
     if (card.type === 'story') {
       return (
         <StoryCard
@@ -292,7 +327,8 @@ function AppHome() {
           card={card}
           index={index}
           total={totalCards}
-          isActive={activeIndex === index}
+          isActive={cardIsActive}
+          isFlipped={cardIsActive && isFlipped}
           storyEditForm={storyEditForm}
           userData={currentUser}
           onStoryFormChange={setStoryEditForm}
@@ -307,7 +343,8 @@ function AppHome() {
         card={card}
         index={index}
         total={totalCards}
-        isActive={activeIndex === index}
+        isActive={cardIsActive}
+        isFlipped={cardIsActive && isFlipped}
         isUploading={isUploading}
         showcaseEditForm={showcaseEditForm}
         userData={currentUser}
@@ -318,23 +355,41 @@ function AppHome() {
     )
   }
 
+  const profileCardIsActive = totalCards === 1 || activeIndex === 0
   const profileCard = (
     <ProfileCard
       user={currentUser ?? { email: '' }}
       index={0}
       total={totalCards}
-      isActive={totalCards === 1 || activeIndex === 0}
+      isActive={profileCardIsActive}
+      isFlipped={profileCardIsActive && isFlipped}
       isUploading={isUploading}
       isEditing={isEditingProfileCard}
       editForm={profileEditForm}
       userData={currentUser}
       onImageClick={handleProfileImageClick}
       onStartEdit={handleStartProfileEdit}
-      onSaveEdit={handleSaveProfileEdit}
       onCancelEdit={handleCancelProfileEdit}
       onEditFormChange={setProfileEditForm}
+      onCloseFlip={() => setIsFlipped(false)}
     />
   )
+
+  const handleStartActiveEdit = () => {
+    if (isProfileActive) {
+      handleStartProfileEdit()
+    } else if (activeCard) {
+      handleStartEdit(activeCard)
+    }
+  }
+
+  const handleSaveActiveEdit = () => {
+    if (isEditingProfileCard) {
+      handleSaveProfileEdit()
+    } else if (editingCardId) {
+      handleSaveEdit()
+    }
+  }
 
   return (
     <div className="relative isolate min-h-screen bg-white flex flex-col overflow-x-hidden">
@@ -372,7 +427,7 @@ function AppHome() {
             <div>
               <h1 className="text-2xl font-bold text-black">Create A Deqly</h1>
               <p className="text-xs text-black mt-0.5">
-                Showcase yourself in {MAX_CARDS} cards
+                Showcase yourself in {MAX_CARDS + 1} cards
               </p>
             </div>
             <ProfileDropdown />
@@ -395,6 +450,21 @@ function AppHome() {
               </div>
             </div>
           )}
+
+          {/* Anchored card actions */}
+          <div className="flex justify-center mt-4">
+            <CardActions
+              isFlipped={isFlipped}
+              isEditing={isActiveEditing}
+              copied={copied}
+              readOnly={false}
+              onToggleFlip={() => setIsFlipped((v) => !v)}
+              onCopyLink={handleCopyLink}
+              onNativeShare={handleNativeShare}
+              onStartEdit={handleStartActiveEdit}
+              onSaveEdit={handleSaveActiveEdit}
+            />
+          </div>
 
           {/* Dot navigation */}
           {totalCards > 1 && (

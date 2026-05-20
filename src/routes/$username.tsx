@@ -7,12 +7,17 @@ import { useQuery } from 'convex/react'
 import useEmblaCarousel from 'embla-carousel-react'
 import { Pencil } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
+import { CardActions } from '~/components/cards/card-actions'
 import { LogoMask } from '~/components/cards/card-icons'
 import { ProfileCard } from '~/components/cards/profile-card'
 import { PublicCta } from '~/components/cards/public-cta'
 import { ShowcaseCard } from '~/components/cards/showcase-card'
 import { StoryCard } from '~/components/cards/story-card'
-import type { CardData, UserData } from '~/components/cards/types'
+import {
+  type CardData,
+  getProfileUrl,
+  type UserData,
+} from '~/components/cards/types'
 import { PageFooter } from '~/components/login/page-footer'
 import { NotFoundView } from '~/components/not-found-view'
 import { Button } from '~/components/ui/button'
@@ -86,6 +91,8 @@ function PublicProfile() {
 
   const totalCards = 1 + cards.length
   const [activeIndex, setActiveIndex] = useState(0)
+  const [isFlipped, setIsFlipped] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'center',
@@ -95,6 +102,7 @@ function PublicProfile() {
   const onSelect = useCallback(() => {
     if (!emblaApi) return
     setActiveIndex(emblaApi.selectedScrollSnap())
+    setIsFlipped(false)
   }, [emblaApi])
 
   useEffect(() => {
@@ -104,6 +112,26 @@ function PublicProfile() {
       emblaApi.off('select', onSelect)
     }
   }, [emblaApi, onSelect])
+
+  const profileUrl = getProfileUrl(profileUser?.username)
+
+  const handleCopyLink = useCallback(async () => {
+    if (!profileUrl) return
+    await navigator.clipboard.writeText(profileUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }, [profileUrl])
+
+  const handleNativeShare = useCallback(async () => {
+    if (!profileUrl) return
+    if (navigator.share) {
+      await navigator.share({ url: profileUrl })
+    } else {
+      await navigator.clipboard.writeText(profileUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }, [profileUrl])
 
   if (profileUser === null) {
     return <NotFoundView />
@@ -127,6 +155,7 @@ function PublicProfile() {
   }
 
   function renderCard(card: CardData, index: number) {
+    const cardIsActive = activeIndex === index
     if (card.type === 'story') {
       return (
         <StoryCard
@@ -136,6 +165,9 @@ function PublicProfile() {
           total={totalCards}
           userData={userData}
           readOnly
+          isActive={cardIsActive}
+          isFlipped={cardIsActive && isFlipped}
+          onCloseFlip={() => setIsFlipped(false)}
         />
       )
     }
@@ -147,10 +179,14 @@ function PublicProfile() {
         total={totalCards}
         userData={userData}
         readOnly
+        isActive={cardIsActive}
+        isFlipped={cardIsActive && isFlipped}
+        onCloseFlip={() => setIsFlipped(false)}
       />
     )
   }
 
+  const profileCardIsActive = totalCards === 1 || activeIndex === 0
   const profileCard = (
     <ProfileCard
       user={userData}
@@ -158,6 +194,9 @@ function PublicProfile() {
       total={totalCards}
       userData={userData}
       readOnly
+      isActive={profileCardIsActive}
+      isFlipped={profileCardIsActive && isFlipped}
+      onCloseFlip={() => setIsFlipped(false)}
     />
   )
 
@@ -206,6 +245,19 @@ function PublicProfile() {
             </div>
           )}
 
+          {/* Anchored card actions */}
+          <div className="flex justify-center mt-4">
+            <CardActions
+              isFlipped={isFlipped}
+              isEditing={false}
+              copied={copied}
+              readOnly
+              onToggleFlip={() => setIsFlipped((v) => !v)}
+              onCopyLink={handleCopyLink}
+              onNativeShare={handleNativeShare}
+            />
+          </div>
+
           {/* Dot navigation */}
           {totalCards > 1 && (
             <div className="flex items-center justify-center gap-2 mt-4">
@@ -230,9 +282,7 @@ function PublicProfile() {
             </div>
           )}
 
-          {(totalCards === 1 || activeIndex === 0) && (
-            <PublicCta user={userData} showCreateDeck={!isOwner} />
-          )}
+          <PublicCta user={userData} showCreateDeck={!isOwner} />
         </div>
       </div>
 

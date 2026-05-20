@@ -1,5 +1,5 @@
-import { Link, Pencil, Share2, Trash2, Upload, X } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
+import { Pencil, Trash2, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { generateVCard } from '~/lib/vcard'
 import { Button } from '../ui/button'
@@ -17,7 +17,6 @@ import { FlipCard } from './flip-card'
 import {
   type CardData,
   DEFAULT_CARD_COLOR,
-  getProfileUrl,
   MAX_SHOWCASE_DESCRIPTION,
   MAX_SUBTITLE,
   MAX_TITLE,
@@ -35,12 +34,13 @@ interface ShowcaseCardProps {
   userData: UserData | null | undefined
   readOnly?: boolean
   isActive?: boolean
+  isFlipped?: boolean
   onImageClick?: () => void
   onStartEdit?: (card: CardData) => void
-  onSaveEdit?: () => void
   onCancelEdit?: () => void
   onDeleteCard?: (id: Id<'cards'>) => void
   onShowcaseFormChange?: (form: ShowcaseEditForm) => void
+  onCloseFlip?: () => void
 }
 
 function DeleteConfirmDialog({
@@ -90,12 +90,13 @@ export function ShowcaseCard({
   userData,
   readOnly = false,
   isActive = true,
+  isFlipped = false,
   onImageClick,
   onStartEdit,
-  onSaveEdit,
   onCancelEdit,
   onDeleteCard,
   onShowcaseFormChange,
+  onCloseFlip,
 }: ShowcaseCardProps) {
   const isEditing = editingCardId === card._id
   const accentColor = isEditing && showcaseEditForm
@@ -103,33 +104,7 @@ export function ShowcaseCard({
     : (card.color ?? DEFAULT_CARD_COLOR.hex)
 
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [isFlipped, setIsFlipped] = useState(false)
-  const [copied, setCopied] = useState(false)
-
-  const profileUrl = getProfileUrl(userData?.username)
-
-  const handleCopyLink = useCallback(async () => {
-    if (!profileUrl) return
-    await navigator.clipboard.writeText(profileUrl)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }, [profileUrl])
-
-  const handleNativeShare = useCallback(async () => {
-    if (!profileUrl) return
-    if (navigator.share) {
-      await navigator.share({ url: profileUrl })
-    } else {
-      await navigator.clipboard.writeText(profileUrl)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
-  }, [profileUrl])
-
-  // Reset flip when entering edit mode
-  if (isEditing && isFlipped) {
-    setIsFlipped(false)
-  }
+  const effectiveFlipped = isFlipped && !isEditing
 
   const vCardData = useMemo(() => {
     if (!userData) return ''
@@ -295,65 +270,30 @@ export function ShowcaseCard({
 
         {/* Accent bottom */}
         <div
-          className="absolute bottom-0 left-0 right-0 px-4 pt-3 pb-5 z-10 min-h-[180px]"
+          className="absolute bottom-0 left-0 right-0 px-4 pt-3 pb-5 z-10 min-h-[180px] overflow-hidden"
           style={{ backgroundColor: accentColor }}
         >
-          {isEditing && showcaseEditForm ? editForm : viewContent}
-          <LogoMask className="absolute -bottom-6 left-1/2 -translate-x-1/2 -rotate-90 w-64 h-auto text-white/10 pointer-events-none" />
+          <LogoMask className="absolute -bottom-6 left-1/2 -translate-x-1/2 -rotate-90 w-64 h-auto text-white/10 pointer-events-none z-0" />
+          <div className="relative z-[1]">
+            {isEditing && showcaseEditForm ? editForm : viewContent}
+          </div>
         </div>
       </div>
     )
 
     return (
-      <div className="flex flex-col items-center">
+      <>
         <FlipCard
-          isFlipped={isFlipped}
+          isFlipped={effectiveFlipped}
           front={cardFront}
           back={
             <CardQrBack
               vCardData={vCardData}
               cardColor={accentColor}
-              onClose={() => setIsFlipped(false)}
+              onClose={onCloseFlip ?? (() => {})}
             />
           }
         />
-
-        {(isActive || isFlipped || isEditing) && (
-          <div className="flex justify-center gap-7 mt-4 w-80">
-            {isFlipped ? (
-              <>
-                <button type="button" onClick={handleCopyLink} className="flex flex-col items-center gap-1 w-16">
-                  <Link className="w-7 h-7 text-neutral-700" />
-                  <span className="text-sm text-black">{copied ? 'Copied!' : 'Copy link'}</span>
-                </button>
-                <button type="button" onClick={handleNativeShare} className="flex flex-col items-center gap-1 w-16">
-                  <Upload className="w-7 h-7 text-neutral-700" />
-                  <span className="text-sm text-black">Share</span>
-                </button>
-              </>
-            ) : isEditing ? (
-              <Button onClick={onSaveEdit} className="bg-brand-teal flex-1" size="lg">
-                Save Changes
-              </Button>
-            ) : readOnly ? (
-              <Button onClick={() => setIsFlipped(true)} className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5" size="lg">
-                <Share2 className="w-4 h-4" />
-                Share
-              </Button>
-            ) : (
-              <>
-                <Button onClick={() => setIsFlipped(true)} className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5" size="lg">
-                  <Share2 className="w-4 h-4" />
-                  Share
-                </Button>
-                <Button onClick={() => onStartEdit?.(card)} className="flex-1 bg-brand-teal hover:bg-teal-600 gap-1.5" size="lg">
-                  <Pencil className="w-4 h-4" />
-                  Edit
-                </Button>
-              </>
-            )}
-          </div>
-        )}
 
         <DeleteConfirmDialog
           open={confirmDelete}
@@ -363,7 +303,7 @@ export function ShowcaseCard({
             setConfirmDelete(false)
           }}
         />
-      </div>
+      </>
     )
   }
 
@@ -442,65 +382,30 @@ export function ShowcaseCard({
 
       {/* Accent bottom section */}
       <div
-        className="relative px-4 pt-3 pb-5 min-h-[180px]"
+        className="relative overflow-hidden px-4 pt-3 pb-5 min-h-[180px]"
         style={{ backgroundColor: accentColor }}
       >
-        {isEditing && showcaseEditForm ? editForm : viewContent}
-        <LogoMask className="absolute -bottom-6 left-1/2 -translate-x-1/2 -rotate-90 w-64 h-auto text-white/10 pointer-events-none" />
+        <LogoMask className="absolute -bottom-6 left-1/2 -translate-x-1/2 -rotate-90 w-64 h-auto text-white/10 pointer-events-none z-0" />
+        <div className="relative z-[1]">
+          {isEditing && showcaseEditForm ? editForm : viewContent}
+        </div>
       </div>
     </div>
   )
 
   return (
-    <div className="flex flex-col items-center">
+    <>
       <FlipCard
-        isFlipped={isFlipped}
+        isFlipped={effectiveFlipped}
         front={cardFront}
         back={
           <CardQrBack
             vCardData={vCardData}
             cardColor={accentColor}
-            onClose={() => setIsFlipped(false)}
+            onClose={onCloseFlip ?? (() => {})}
           />
         }
       />
-
-      {(isActive || isFlipped || isEditing) && (
-        <div className="flex justify-center gap-7 mt-4 w-80">
-          {isFlipped ? (
-            <>
-              <button type="button" onClick={handleCopyLink} className="flex flex-col items-center gap-1 w-16">
-                <Link className="w-7 h-7 text-neutral-700" />
-                <span className="text-sm text-black">{copied ? 'Copied!' : 'Copy link'}</span>
-              </button>
-              <button type="button" onClick={handleNativeShare} className="flex flex-col items-center gap-1 w-16">
-                <Upload className="w-7 h-7 text-neutral-700" />
-                <span className="text-sm text-black">Share</span>
-              </button>
-            </>
-          ) : isEditing ? (
-            <Button onClick={onSaveEdit} className="bg-brand-teal flex-1" size="lg">
-              Save Changes
-            </Button>
-          ) : readOnly ? (
-            <Button onClick={() => setIsFlipped(true)} className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5" size="lg">
-              <Share2 className="w-4 h-4" />
-              Share
-            </Button>
-          ) : (
-            <>
-              <Button onClick={() => setIsFlipped(true)} className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5" size="lg">
-                <Share2 className="w-4 h-4" />
-                Share
-              </Button>
-              <Button onClick={() => onStartEdit?.(card)} className="flex-1 bg-brand-teal hover:bg-teal-600 gap-1.5" size="lg">
-                <Pencil className="w-4 h-4" />
-                Edit
-              </Button>
-            </>
-          )}
-        </div>
-      )}
 
       <DeleteConfirmDialog
         open={confirmDelete}
@@ -510,6 +415,6 @@ export function ShowcaseCard({
           setConfirmDelete(false)
         }}
       />
-    </div>
+    </>
   )
 }

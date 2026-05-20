@@ -3,7 +3,7 @@ import { type QueryCtx, mutation, query } from './_generated/server'
 import type { Doc } from './_generated/dataModel'
 import { getUser } from './auth'
 
-const MAX_CARDS = 3
+const MAX_CARDS = 2
 const MAX_TITLE = 30
 const MAX_SUBTITLE = 35
 const MAX_SHOWCASE_DESCRIPTION = 155
@@ -68,7 +68,7 @@ export const createCard = mutation({
       .collect()
 
     if (existing.length >= MAX_CARDS) {
-      throw new Error(`You can create up to ${MAX_CARDS} cards`)
+      throw new Error(`You can create up to ${MAX_CARDS} additional cards`)
     }
 
     if (args.name && args.name.length > MAX_TITLE) {
