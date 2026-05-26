@@ -91,7 +91,7 @@ export function ProfileCard({
           }
         }}
         maxLength={MAX_SUBTITLE}
-        placeholder="Occupation"
+        placeholder="Subtitle"
         className="bg-transparent text-white text-base border-b border-white/40 focus:border-white outline-none pb-0.5 touch-pan-y"
       />
       <div className="relative">
@@ -250,17 +250,14 @@ export function ProfileCard({
             onClick={onImageClick}
             disabled={isUploading}
             variant="ghost"
-            className="w-full flex-1 rounded-2xl border-2 border-stone-300 flex flex-col items-center justify-center gap-3 hover:border-neutral-400"
+            className="w-full flex-1 rounded-2xl border-2 border-stone-300 flex flex-col items-center justify-center gap-3 hover:border-neutral-400 whitespace-normal overflow-hidden"
           >
             <ImagePlaceholderIcon />
-            <div className="flex flex-col items-center gap-3">
-              <p className="text-neutral-400 text-xl font-bold text-center">
+            <div className="flex flex-col items-center gap-3 w-full px-4">
+              <p className="text-neutral-400 text-xl font-bold text-center w-full">
                 {isUploading ? 'Uploading...' : 'Add your photo'}
               </p>
-              <p className="text-neutral-400 text-sm text-center leading-tight px-4 text-wrap">
-                Drop an image or browse it from your computer
-              </p>
-              <span className="px-5 py-1 rounded-3xl outline outline-1 outline-neutral-400 text-neutral-400 text-sm">
+<span className="px-5 py-1 rounded-3xl outline outline-1 outline-neutral-400 text-neutral-400 text-sm">
                 Open
               </span>
             </div>

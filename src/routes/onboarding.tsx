@@ -135,7 +135,7 @@ function OnboardingForm({ loading, error, onSubmit }: OnboardingFormProps) {
             </form.AppField>
 
             <form.AppField name="occupation">
-              {(field) => <field.TextField placeholder="Occupation" />}
+              {(field) => <field.TextField placeholder="Subtitle" />}
             </form.AppField>
           </div>
 

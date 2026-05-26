@@ -248,8 +248,8 @@ export function StoryCard({
                 <p className="text-white text-base">
                   {block.subheader || 'Subheader'}
                 </p>
-                <div className="rounded-[10px] p-2.5 opacity-60">
-                  <p className="text-white text-sm">
+                <div className="rounded-[10px] py-2.5 pr-2.5 opacity-60">
+                  <p className="text-white text-sm text-left">
                     {block.description ||
                       'Add a description of your card here. Explain your project as best as you can within 220 characters thats leaves a good impact'}
                   </p>
