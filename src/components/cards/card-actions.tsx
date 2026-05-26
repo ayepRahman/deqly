@@ -26,33 +26,35 @@ export function CardActions({
 }: CardActionsProps) {
   if (isFlipped) {
     return (
-      <div className="flex justify-center gap-7 w-80">
-        <button
+      <div className="flex justify-center gap-7">
+        <Button
           type="button"
+          variant="ghost"
           onClick={onCopyLink}
-          className="flex flex-col items-center gap-1 w-16"
+          className="flex h-auto w-16 flex-col gap-1 rounded-none bg-transparent p-0 hover:bg-transparent"
         >
-          <LinkIcon className="w-7 h-7 text-neutral-700" />
+          <LinkIcon className="size-7 text-neutral-700" />
           <span className="text-sm text-black">
             {copied ? 'Copied!' : 'Copy link'}
           </span>
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
           onClick={onNativeShare}
-          className="flex flex-col items-center gap-1 w-16"
+          className="flex h-auto w-16 flex-col gap-1 rounded-none bg-transparent p-0 hover:bg-transparent"
         >
-          <Upload className="w-7 h-7 text-neutral-700" />
+          <Upload className="size-7 text-neutral-700" />
           <span className="text-sm text-black">Share</span>
-        </button>
+        </Button>
       </div>
     )
   }
 
   if (isEditing) {
     return (
-      <div className="flex justify-center gap-7 w-80">
-        <Button onClick={onSaveEdit} className="bg-brand-teal flex-1" size="lg">
+      <div className="flex justify-center gap-7">
+        <Button onClick={onSaveEdit} variant="teal" size="2xl">
           Save Changes
         </Button>
       </div>
@@ -61,13 +63,9 @@ export function CardActions({
 
   if (readOnly) {
     return (
-      <div className="flex justify-center gap-7 w-80">
-        <Button
-          onClick={onToggleFlip}
-          className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5"
-          size="lg"
-        >
-          <Share2 className="w-4 h-4" />
+      <div className="flex justify-center gap-7">
+        <Button onClick={onToggleFlip} variant="violet" size="2xl">
+          <Share2 />
           Share
         </Button>
       </div>
@@ -75,21 +73,13 @@ export function CardActions({
   }
 
   return (
-    <div className="flex justify-center gap-7 w-80">
-      <Button
-        onClick={onToggleFlip}
-        className="flex-1 bg-violet-500 hover:bg-violet-600 gap-1.5"
-        size="lg"
-      >
-        <Share2 className="w-4 h-4" />
+    <div className="flex justify-center gap-7">
+      <Button onClick={onToggleFlip} variant="violet" size="2xl">
+        <Share2 />
         Share
       </Button>
-      <Button
-        onClick={onStartEdit}
-        className="flex-1 bg-brand-teal hover:bg-teal-600 gap-1.5"
-        size="lg"
-      >
-        <Pencil className="w-4 h-4" />
+      <Button onClick={onStartEdit} variant="teal" size="2xl">
+        <Pencil />
         Edit
       </Button>
     </div>

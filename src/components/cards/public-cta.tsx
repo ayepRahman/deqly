@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { Globe, Mail, Phone } from 'lucide-react'
+import { Button } from '~/components/ui/button'
 import type { UserData } from './types'
 
 interface PublicCtaProps {
@@ -31,7 +32,11 @@ function buildVCard(user: UserData): string {
 }
 
 function escapeVCardValue(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;')
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/\n/g, '\\n')
+    .replace(/,/g, '\\,')
+    .replace(/;/g, '\\;')
 }
 
 function downloadVCard(user: UserData) {
@@ -40,7 +45,10 @@ function downloadVCard(user: UserData) {
   const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
-  const fileName = (user.username || user.name || 'contact').replace(/[^a-z0-9_-]/gi, '_')
+  const fileName = (user.username || user.name || 'contact').replace(
+    /[^a-z0-9_-]/gi,
+    '_',
+  )
   anchor.href = url
   anchor.download = `${fileName}.vcf`
   document.body.appendChild(anchor)
@@ -63,9 +71,9 @@ export function PublicCta({ user, showCreateDeck }: PublicCtaProps) {
     'flex items-center justify-center w-12 h-12 rounded-full text-black hover:bg-neutral-100 transition-colors'
 
   return (
-    <div className="flex flex-col items-center mt-8 gap-4">
+    <div className="flex flex-col items-center mt-2">
       {(hasPhone || hasEmail || hasWebsite) && (
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex items-center justify-center">
           {hasPhone && (
             <a
               href={`tel:${user.mobileNumber}`}
@@ -98,13 +106,15 @@ export function PublicCta({ user, showCreateDeck }: PublicCtaProps) {
         </div>
       )}
 
-      <button
+      <Button
         type="button"
+        variant="teal"
+        size="2xl"
+        className="mb-2"
         onClick={() => downloadVCard(user)}
-        className="h-12 px-10 rounded-full bg-[#33D9B2] text-white text-lg font-semibold shadow-sm hover:bg-[#2AC6A1] active:translate-y-px transition-colors"
       >
         Save Contact
-      </button>
+      </Button>
 
       {showCreateDeck && (
         <Link

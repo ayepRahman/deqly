@@ -1,5 +1,6 @@
-import { Camera, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { useRef } from 'react'
+import { CameraIcon } from '~/components/cards/card-icons'
 import { Button } from '~/components/ui/button'
 import { useImageUpload } from '~/hooks/use-image-upload'
 import { type ProfileValues, profileSchema } from '~/lib/validations'
@@ -76,17 +77,17 @@ export function ProfileForm({
         ) : (
           <div className="w-full h-full bg-gradient-to-r from-violet-500/20 to-violet-500/10" />
         )}
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
+          isLoading={bannerUpload.isUploading}
           onClick={() => bannerInputRef.current?.click()}
-          disabled={bannerUpload.isUploading}
-          className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute inset-0 size-auto rounded-none bg-black/30 text-white opacity-0 transition-opacity hover:bg-black/30 group-hover:opacity-100"
         >
-          <Camera className="w-5 h-5 text-white" />
-          <span className="text-white text-xs ml-1.5">
-            {bannerUpload.isUploading ? 'Uploading...' : 'Change banner'}
-          </span>
-        </button>
+          <CameraIcon className="size-5" />
+          <span className="ml-1.5 text-xs">Change banner</span>
+        </Button>
         <input
           ref={bannerInputRef}
           type="file"
@@ -100,13 +101,15 @@ export function ProfileForm({
         />
 
         {/* Back button */}
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={onBack}
-          className="absolute top-4 left-4 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center hover:bg-black/60 transition-colors"
+          className="absolute top-4 left-4 bg-black/40 text-white hover:bg-black/60"
         >
-          <ArrowLeft className="w-4 h-4 text-white" />
-        </button>
+          <ArrowLeft className="size-4" />
+        </Button>
       </div>
 
       {/* Avatar */}
@@ -125,14 +128,16 @@ export function ProfileForm({
                 .toUpperCase()}
             </div>
           )}
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
+            isLoading={avatarUpload.isUploading}
             onClick={() => avatarInputRef.current?.click()}
-            disabled={avatarUpload.isUploading}
-            className="absolute inset-0 rounded-full flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute inset-0 size-auto rounded-full bg-black/30 text-white opacity-0 transition-opacity hover:bg-black/30 group-hover:opacity-100"
           >
-            <Camera className="w-4 h-4 text-white" />
-          </button>
+            <CameraIcon className="size-4" />
+          </Button>
           <input
             ref={avatarInputRef}
             type="file"
@@ -242,10 +247,12 @@ export function ProfileForm({
               {(canSubmit) => (
                 <Button
                   type="submit"
-                  disabled={loading || !canSubmit}
-                  className="px-12 h-12 rounded-full bg-violet-500 text-white text-sm font-semibold hover:bg-violet-600 disabled:bg-gray-300 disabled:text-gray-400 disabled:opacity-100 disabled:shadow-none shadow-lg shadow-violet-200"
+                  variant="violet"
+                  isLoading={loading}
+                  disabled={!canSubmit}
+                  className="px-12 h-12 rounded-full text-sm font-semibold disabled:bg-gray-300 disabled:text-gray-400 disabled:opacity-100 disabled:shadow-none shadow-lg shadow-violet-200"
                 >
-                  {loading ? 'Saving...' : 'Save Changes'}
+                  Save Changes
                 </Button>
               )}
             </form.Subscribe>

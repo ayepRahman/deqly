@@ -305,7 +305,7 @@ export function StoryCard({
                 onDeleteCard?.(card._id)
                 setConfirmDelete(false)
               }}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              variant="danger"
             >
               Delete
             </Button>

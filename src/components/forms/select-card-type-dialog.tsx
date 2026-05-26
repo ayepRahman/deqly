@@ -13,7 +13,7 @@ interface SelectCardTypeDialogProps {
 function ShowcaseIcon({ selected }: { selected: boolean }) {
   const fill = selected ? 'white' : '#AAAAAA'
   return (
-    <svg viewBox="0 0 97 84" fill="none" xmlns="http://www.w3.org/2000/svg" width="97" height="84" role="img" aria-label="Showcase card">
+    <svg className="size-auto" viewBox="0 0 97 84" fill="none" xmlns="http://www.w3.org/2000/svg" width="97" height="84" role="img" aria-label="Showcase card">
       <g clipPath="url(#clip0_showcase)">
         <path d="M45.6325 41.8997C44.8047 37.9363 43.0488 35.1225 40.3649 33.4516C38.8828 32.536 37.1803 32.0013 35.2509 31.8542C35.825 32.1015 36.3792 32.3889 36.9066 32.7164C38.4421 33.6722 39.7173 34.9354 40.7321 36.4994C41.8003 38.1502 42.5815 40.1286 43.0622 42.4344C43.5428 44.7403 43.623 46.8924 43.2958 48.8507C42.9954 50.662 42.3411 52.3129 41.3463 53.7966C40.9725 54.3447 40.5652 54.866 40.1045 55.3472C41.8404 54.4316 43.2024 53.2285 44.2038 51.7447C45.973 49.1181 46.447 45.8364 45.6258 41.8997H45.6325Z" fill={fill}/>
         <path d="M44.6378 32.556C43.2691 31.7072 41.7069 31.1859 39.951 30.9987C40.4517 31.226 40.9391 31.4799 41.4064 31.774C44.551 33.7323 46.6273 37.0006 47.562 41.4987C48.5033 45.9968 47.9158 49.7864 45.8462 52.8609C45.5124 53.3555 45.1518 53.8167 44.7513 54.2578C46.3068 53.3689 47.5486 52.2393 48.4766 50.8625C50.2459 48.2358 50.7199 44.9542 49.8987 41.0175C49.0775 37.0808 47.315 34.2403 44.6311 32.5694L44.6378 32.556Z" fill={fill}/>
@@ -36,7 +36,7 @@ function StoryIcon({ selected }: { selected: boolean }) {
   const fill = selected ? 'white' : '#AAAAAA'
   const fillOpacity = selected ? 1 : 0.666667
   return (
-    <svg viewBox="0 0 69.743 78.5458" fill="none" xmlns="http://www.w3.org/2000/svg" width="70" height="79" role="img" aria-label="Story card">
+    <svg className="size-auto" viewBox="0 0 69.743 78.5458" fill="none" xmlns="http://www.w3.org/2000/svg" width="70" height="79" role="img" aria-label="Story card">
       <path d="M55.2698 15.7446L51.16 15.4496C51.042 15.443 50.9634 15.3119 51.0092 15.2071L52.661 11.4315C52.7331 11.2611 52.5234 11.1038 52.3857 11.2283L49.2722 13.9289C49.1805 14.0075 49.0363 13.9748 48.9969 13.8633L47.4959 10.0288C47.4303 9.85182 47.1681 9.89115 47.155 10.0812L46.8601 14.1911C46.8535 14.3091 46.7224 14.3877 46.6175 14.3418L42.842 12.69C42.6716 12.6179 42.5143 12.8211 42.6388 12.9653L45.3394 16.0789C45.418 16.1706 45.3852 16.3148 45.2738 16.3542L41.4393 17.8552C41.2623 17.9207 41.3016 18.1829 41.4917 18.196L45.6016 18.491C45.7195 18.4976 45.7982 18.6287 45.7523 18.7335L44.1005 22.5091C44.0284 22.6795 44.2382 22.8368 44.3758 22.7123L47.4893 20.0117C47.5811 19.9331 47.7253 19.9658 47.7646 20.0773L49.2657 23.9118C49.3312 24.0888 49.5934 24.0495 49.6065 23.8594L49.9015 19.7495C49.908 19.6315 50.0391 19.5529 50.144 19.5988L53.9196 21.2506C54.09 21.3227 54.2473 21.1129 54.1228 20.9753L51.4222 17.8618C51.3435 17.77 51.3763 17.6258 51.4877 17.5865L55.3223 16.0854C55.4993 16.0199 55.4599 15.7577 55.2698 15.7446Z" fill={fill} fillOpacity={fillOpacity}/>
       <path d="M69.4938 13.6601C69.4742 9.62896 66.6032 6.09594 62.6638 5.25037L61.615 5.02751C60.0418 1.99921 56.8562 0 53.3363 0L9.23581 0.203198C6.7581 0.216307 4.43116 1.19297 2.68759 2.94965C0.94402 4.70633 -0.0129766 7.04638 0.000132924 9.52408L0.288543 69.3102C0.314762 74.4032 4.47704 78.5458 9.5701 78.5458H9.60943L53.7099 78.3426C57.302 78.3295 60.5072 76.2254 62.0214 73.0726L63.0505 72.8366C67.0096 71.919 69.756 68.4449 69.7429 64.381L69.4938 13.6601ZM62.4343 7.26269C62.4343 7.26269 62.4278 7.22991 62.4212 7.2168C62.4212 7.2168 62.4212 7.2168 62.4278 7.2168V7.26269H62.4343ZM58.8292 70.4245C58.2196 72.7645 56.1024 74.4032 53.6903 74.4163L9.58977 74.6195C8.18704 74.6326 6.8171 74.0755 5.80111 73.0726C4.78512 72.0697 4.22141 70.726 4.21485 69.2971L3.92644 9.51097C3.92644 8.08203 4.47049 6.73831 5.47337 5.72232C6.47625 4.70633 7.81998 4.14262 9.24892 4.13606L53.3429 3.93286H53.3691C55.7091 3.93286 57.8132 5.49945 58.4884 7.74119C58.6391 8.23935 58.7178 8.75062 58.7178 9.25534L59.0062 69.0414C59.0062 69.4871 58.9472 69.9525 58.8227 70.4245H58.8292ZM62.7621 70.8899C62.7686 70.8505 62.7817 70.8046 62.7883 70.7653V70.8899C62.7883 70.8899 62.7686 70.8899 62.7621 70.8899ZM62.9456 69.0349C62.9456 69.0349 62.9456 69.0349 62.9456 69.0283L62.6572 9.24878H63.2209L63.057 9.5503C64.5909 10.3762 65.5479 11.9559 65.5544 13.6864L65.8035 64.4072C65.81 66.1508 64.8727 67.737 63.3586 68.5629L63.6142 69.0414H62.9456V69.0349ZM66.8391 67.8419C66.7277 68.0254 66.6032 68.2024 66.4721 68.3794C66.6032 68.2024 66.7277 68.032 66.8391 67.8419ZM66.3279 68.576C66.2033 68.7333 66.0657 68.871 65.928 69.0152C66.0657 68.871 66.2033 68.7268 66.3279 68.576ZM65.3053 69.5986C65.4495 69.4806 65.5937 69.3692 65.7248 69.2446C65.5937 69.3692 65.4495 69.4871 65.3053 69.5986ZM67.3045 66.8718C67.3897 66.6555 67.475 66.4326 67.534 66.2032C67.4684 66.4326 67.3897 66.6555 67.3045 66.8718ZM67.7699 64.4137C67.7699 64.4137 67.7699 64.4006 67.7699 64.3941C67.7699 64.3941 67.7699 64.4072 67.7699 64.4137ZM67.5929 65.9279C67.6388 65.7247 67.6847 65.5281 67.7175 65.3183C67.6913 65.5281 67.6388 65.7247 67.5929 65.9279Z" fill={fill} fillOpacity={fillOpacity}/>
       <path d="M11.3725 17.3833H27.2941C28.723 17.3833 29.8767 16.2296 29.8767 14.8007C29.8767 13.3717 28.723 12.2181 27.2941 12.2181H11.3725C9.94359 12.2181 8.78995 13.3717 8.78995 14.8007C8.78995 16.2296 9.94359 17.3833 11.3725 17.3833Z" fill={fill} fillOpacity={fillOpacity}/>
@@ -70,13 +70,14 @@ export function SelectCardTypeDialog({
 
         <div className="flex gap-4 justify-center mb-6">
           {/* Showcase Card */}
-          <button
+          <Button
             type="button"
+            variant={selected === 'showcase' ? 'violet' : 'ghost'}
             onClick={() => setSelected('showcase')}
-            className={`w-40 h-52 rounded-[20px] flex flex-col items-center justify-between px-3 pt-5 pb-4 cursor-pointer transition-colors ${
+            className={`flex h-52 w-40 flex-col items-center justify-between gap-0 whitespace-normal rounded-[20px] px-3 pt-5 pb-4 ${
               selected === 'showcase'
-                ? 'bg-violet-500'
-                : 'bg-white border-[1.5px] border-neutral-400'
+                ? 'hover:bg-violet-500'
+                : 'border-[1.5px] border-neutral-400 bg-white hover:bg-white'
             }`}
           >
             <p
@@ -96,16 +97,17 @@ export function SelectCardTypeDialog({
             >
               Showcase your projects and journey through images
             </p>
-          </button>
+          </Button>
 
           {/* Story Card */}
-          <button
+          <Button
             type="button"
+            variant={selected === 'story' ? 'violet' : 'ghost'}
             onClick={() => setSelected('story')}
-            className={`w-40 h-52 rounded-[20px] flex flex-col items-center justify-between px-3 pt-5 pb-4 cursor-pointer transition-colors ${
+            className={`flex h-52 w-40 flex-col items-center justify-between gap-0 whitespace-normal rounded-[20px] px-3 pt-5 pb-4 ${
               selected === 'story'
-                ? 'bg-violet-500'
-                : 'bg-white border-[1.5px] border-neutral-400'
+                ? 'hover:bg-violet-500'
+                : 'border-[1.5px] border-neutral-400 bg-white hover:bg-white'
             }`}
           >
             <p
@@ -125,13 +127,14 @@ export function SelectCardTypeDialog({
             >
               Express your story, voice, and personality through words
             </p>
-          </button>
+          </Button>
         </div>
 
         <div className="flex justify-center">
           <Button
             onClick={handleCreate}
-            className="h-9 px-9 bg-teal-500 hover:bg-teal-600 text-base font-bold rounded-[10px]"
+            variant="teal"
+            className="h-9 px-9 text-base font-bold rounded-[10px]"
           >
             Create Card
           </Button>

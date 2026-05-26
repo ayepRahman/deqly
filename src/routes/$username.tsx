@@ -1,8 +1,8 @@
 'use client'
 
 import { convexQuery } from '@convex-dev/react-query'
-import { Link, createFileRoute } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
 import useEmblaCarousel from 'embla-carousel-react'
 import { Pencil } from 'lucide-react'
@@ -59,16 +59,15 @@ export const Route = createFileRoute('/$username')({
         { property: 'og:url', content: canonicalUrl },
         { property: 'og:type', content: 'profile' },
         { property: 'og:site_name', content: 'Deqly' },
-        ...(ogImage
-          ? [{ property: 'og:image', content: ogImage }]
-          : []),
+        ...(ogImage ? [{ property: 'og:image', content: ogImage }] : []),
         // Twitter Card
-        { name: 'twitter:card', content: ogImage ? 'summary_large_image' : 'summary' },
+        {
+          name: 'twitter:card',
+          content: ogImage ? 'summary_large_image' : 'summary',
+        },
         { name: 'twitter:title', content: title },
         { name: 'twitter:description', content: description },
-        ...(ogImage
-          ? [{ name: 'twitter:image', content: ogImage }]
-          : []),
+        ...(ogImage ? [{ name: 'twitter:image', content: ogImage }] : []),
       ],
       links: [{ rel: 'canonical', href: canonicalUrl }],
     }
@@ -84,10 +83,11 @@ function PublicProfile() {
   )
   const currentUser = useQuery(api.auth.getCurrentUser)
 
-  const cards = useQuery(
-    api.cards.listByUserId,
-    profileUser?._id ? { userId: profileUser._id } : 'skip',
-  ) ?? []
+  const cards =
+    useQuery(
+      api.cards.listByUserId,
+      profileUser?._id ? { userId: profileUser._id } : 'skip',
+    ) ?? []
 
   const totalCards = 1 + cards.length
   const [activeIndex, setActiveIndex] = useState(0)
@@ -208,11 +208,7 @@ function PublicProfile() {
           <div className="relative flex flex-col items-center mb-8">
             {isOwner && (
               <Link to="/" className="absolute top-0 right-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                >
+                <Button variant="outline" size="sm" className="gap-1.5">
                   <Pencil className="w-3.5 h-3.5" />
                   Edit Deck
                 </Button>

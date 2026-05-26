@@ -142,8 +142,9 @@ export function SignUpView({
               {(canSubmit) => (
                 <Button
                   type="submit"
+                  variant="violet"
                   disabled={loading || !canSubmit}
-                  className="px-12 h-12 rounded-full bg-violet-500 text-white text-sm font-semibold hover:bg-violet-600 disabled:bg-gray-300 disabled:text-gray-400 disabled:opacity-100 disabled:shadow-none shadow-lg shadow-violet-200"
+                  className="px-12 h-12 rounded-full text-sm font-semibold disabled:bg-gray-300 disabled:text-gray-400 disabled:opacity-100 disabled:shadow-none shadow-lg shadow-violet-200"
                 >
                   {loading ? 'Sending...' : 'Create Cards'}
                 </Button>

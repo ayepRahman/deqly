@@ -1,7 +1,7 @@
 import { Pencil, Trash2, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import type { Id } from '../../../convex/_generated/dataModel'
 import { generateVCard } from '~/lib/vcard'
+import type { Id } from '../../../convex/_generated/dataModel'
 import { Button } from '../ui/button'
 import {
   Dialog,
@@ -10,8 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../ui/dialog'
-import { CardQrBack } from './card-qr-back'
 import { ImagePlaceholderIcon, LogoMask } from './card-icons'
+import { CardQrBack } from './card-qr-back'
 import { ColorPicker } from './color-picker'
 import { FlipCard } from './flip-card'
 import {
@@ -68,10 +68,7 @@ function DeleteConfirmDialog({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button
-            onClick={onConfirm}
-            className="bg-red-500 hover:bg-red-600 text-white"
-          >
+          <Button onClick={onConfirm} variant="danger">
             Delete
           </Button>
         </DialogFooter>
@@ -99,9 +96,10 @@ export function ShowcaseCard({
   onCloseFlip,
 }: ShowcaseCardProps) {
   const isEditing = editingCardId === card._id
-  const accentColor = isEditing && showcaseEditForm
-    ? showcaseEditForm.color
-    : (card.color ?? DEFAULT_CARD_COLOR.hex)
+  const accentColor =
+    isEditing && showcaseEditForm
+      ? showcaseEditForm.color
+      : (card.color ?? DEFAULT_CARD_COLOR.hex)
 
   const [confirmDelete, setConfirmDelete] = useState(false)
   const effectiveFlipped = isFlipped && !isEditing
@@ -120,64 +118,65 @@ export function ShowcaseCard({
     })
   }, [userData])
 
-  const editForm = showcaseEditForm && onShowcaseFormChange ? (
-    <div className="flex flex-col gap-2.5">
-      <input
-        value={showcaseEditForm.name}
-        onChange={(e) => {
-          if (e.target.value.length <= MAX_TITLE) {
-            onShowcaseFormChange({
-              ...showcaseEditForm,
-              name: e.target.value,
-            })
-          }
-        }}
-        maxLength={MAX_TITLE}
-        placeholder="Name"
-        className="bg-transparent text-white font-bold text-xl border-b border-white/40 focus:border-white outline-none pb-0.5 touch-pan-y"
-      />
-      <input
-        value={showcaseEditForm.occupation}
-        onChange={(e) => {
-          if (e.target.value.length <= MAX_SUBTITLE) {
-            onShowcaseFormChange({
-              ...showcaseEditForm,
-              occupation: e.target.value,
-            })
-          }
-        }}
-        maxLength={MAX_SUBTITLE}
-        placeholder="Subtitle"
-        className="bg-transparent text-white text-base border-b border-white/40 focus:border-white outline-none pb-0.5 touch-pan-y"
-      />
-      <div className="relative">
-        <textarea
-          value={showcaseEditForm.description}
+  const editForm =
+    showcaseEditForm && onShowcaseFormChange ? (
+      <div className="flex flex-col gap-2.5">
+        <input
+          value={showcaseEditForm.name}
           onChange={(e) => {
-            if (e.target.value.length <= MAX_SHOWCASE_DESCRIPTION) {
+            if (e.target.value.length <= MAX_TITLE) {
               onShowcaseFormChange({
                 ...showcaseEditForm,
-                description: e.target.value,
+                name: e.target.value,
               })
             }
           }}
-          maxLength={MAX_SHOWCASE_DESCRIPTION}
-          placeholder="Add a description of your card here. Explain your project as best as you can within 155 characters thats leaves a good impact"
-          rows={3}
-          className="w-full bg-transparent text-white text-base outline outline-1 outline-white rounded-[10px] p-[5px] focus:outline-white/80 resize-none opacity-60 focus:opacity-100 touch-pan-y"
+          maxLength={MAX_TITLE}
+          placeholder="Name"
+          className="bg-transparent text-white font-bold text-xl border-b border-white/40 focus:border-white outline-none pb-0.5 touch-pan-y"
         />
-        <span className="absolute bottom-2 right-2 text-xs text-white/50">
-          {showcaseEditForm.description.length}/{MAX_SHOWCASE_DESCRIPTION}
-        </span>
+        <input
+          value={showcaseEditForm.occupation}
+          onChange={(e) => {
+            if (e.target.value.length <= MAX_SUBTITLE) {
+              onShowcaseFormChange({
+                ...showcaseEditForm,
+                occupation: e.target.value,
+              })
+            }
+          }}
+          maxLength={MAX_SUBTITLE}
+          placeholder="Subtitle"
+          className="bg-transparent text-white text-base border-b border-white/40 focus:border-white outline-none pb-0.5 touch-pan-y"
+        />
+        <div className="relative">
+          <textarea
+            value={showcaseEditForm.description}
+            onChange={(e) => {
+              if (e.target.value.length <= MAX_SHOWCASE_DESCRIPTION) {
+                onShowcaseFormChange({
+                  ...showcaseEditForm,
+                  description: e.target.value,
+                })
+              }
+            }}
+            maxLength={MAX_SHOWCASE_DESCRIPTION}
+            placeholder="Add a description of your card here. Explain your project as best as you can within 155 characters thats leaves a good impact"
+            rows={3}
+            className="w-full bg-transparent text-white text-base outline outline-1 outline-white rounded-[10px] p-[5px] focus:outline-white/80 resize-none opacity-60 focus:opacity-100 touch-pan-y"
+          />
+          <span className="absolute bottom-2 right-2 text-xs text-white/50">
+            {showcaseEditForm.description.length}/{MAX_SHOWCASE_DESCRIPTION}
+          </span>
+        </div>
+        <ColorPicker
+          value={showcaseEditForm.color}
+          onChange={(hex) =>
+            onShowcaseFormChange({ ...showcaseEditForm, color: hex })
+          }
+        />
       </div>
-      <ColorPicker
-        value={showcaseEditForm.color}
-        onChange={(hex) =>
-          onShowcaseFormChange({ ...showcaseEditForm, color: hex })
-        }
-      />
-    </div>
-  ) : null
+    ) : null
 
   const viewContent = (
     <div className="flex flex-col gap-2.5">
@@ -366,10 +365,15 @@ export function ShowcaseCard({
           >
             <ImagePlaceholderIcon />
             <div className="flex flex-col items-center gap-3 w-full px-4">
-              <p className="text-neutral-400 text-base font-bold text-center w-full">
-                {isUploading ? 'Uploading...' : 'Upload a photo to personalise your card'}
+              <p className="text-neutral-400 text-xl font-bold text-center w-full">
+                {isUploading ? 'Uploading...' : 'Add an Image'}
               </p>
-<span className="px-5 py-1 rounded-3xl outline outline-1 outline-neutral-400 text-neutral-400 text-sm">
+              {!isUploading && (
+                <p className="text-neutral-400 text-sm text-center w-full">
+                  Upload a photo to personalize your card{' '}
+                </p>
+              )}
+              <span className="px-5 py-1 rounded-3xl outline-1 outline-neutral-400 text-neutral-400 text-sm">
                 Open
               </span>
             </div>
