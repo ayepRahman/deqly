@@ -241,18 +241,20 @@ function PublicProfile() {
             </div>
           )}
 
-          {/* Anchored card actions */}
-          <div className="flex justify-center mt-4">
-            <CardActions
-              isFlipped={isFlipped}
-              isEditing={false}
-              copied={copied}
-              readOnly
-              onToggleFlip={() => setIsFlipped((v) => !v)}
-              onCopyLink={handleCopyLink}
-              onNativeShare={handleNativeShare}
-            />
-          </div>
+          {/* Anchored card actions (owner only) */}
+          {isOwner && (
+            <div className="flex justify-center mt-4">
+              <CardActions
+                isFlipped={isFlipped}
+                isEditing={false}
+                copied={copied}
+                readOnly
+                onToggleFlip={() => setIsFlipped((v) => !v)}
+                onCopyLink={handleCopyLink}
+                onNativeShare={handleNativeShare}
+              />
+            </div>
+          )}
 
           {/* Dot navigation */}
           {totalCards > 1 && (
