@@ -15,6 +15,39 @@ import authConfig from "./auth.config";
 
 const siteUrl = process.env.SITE_URL;
 
+const buildMagicLinkText = (verifyUrl: string) =>
+  [
+    "Sign in to Deqly",
+    "",
+    "Click the link below to sign in. This link expires in 10 minutes and can only be used once.",
+    "",
+    verifyUrl,
+    "",
+    "If you didn't request this email, you can safely ignore it.",
+  ].join("\n");
+
+const buildMagicLinkHtml = (verifyUrl: string) => `<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background-color:#ffffff;">
+    <div style="max-width:480px;margin:0 auto;padding:40px 24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#111111;">
+      <h1 style="font-size:20px;font-weight:700;margin:0 0 16px;">Sign in to Deqly</h1>
+      <p style="font-size:14px;line-height:1.6;margin:0 0 24px;color:#444444;">
+        Click the button below to sign in. This link expires in 10 minutes and can only be used once.
+      </p>
+      <p style="margin:0 0 24px;">
+        <a href="${verifyUrl}" style="display:inline-block;background-color:#8b5cf6;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 28px;border-radius:9999px;">Sign in to Deqly</a>
+      </p>
+      <p style="font-size:13px;line-height:1.6;margin:0 0 24px;color:#666666;">
+        Or copy and paste this link into your browser:<br />
+        <a href="${verifyUrl}" style="color:#8b5cf6;word-break:break-all;">${verifyUrl}</a>
+      </p>
+      <p style="font-size:12px;line-height:1.6;margin:0;color:#999999;">
+        If you didn't request this email, you can safely ignore it.
+      </p>
+    </div>
+  </body>
+</html>`;
+
 const authFunctions: AuthFunctions = internal.auth;
 
 export const authComponent = createClient<DataModel>(components.betterAuth, {
@@ -90,21 +123,18 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) =>
     },
     plugins: [
       magicLink({
-        sendMagicLink: async ({ email, url }) => {
-          console.log("Sending magic link to", email, url);
+        sendMagicLink: async ({ email, token }) => {
+          // Email a link to our interstitial page instead of the raw verify
+          // endpoint — the one-time token is only consumed on an explicit
+          // button click, so inbox link scanners can't burn it.
+          const verifyUrl = `${siteUrl}/auth/verify?token=${encodeURIComponent(token)}`;
           const resend = new Resend(process.env.RESEND_API_KEY);
-          const templateId = "deqlys-magic-link";
           await resend.emails.send({
             from: process.env.EMAIL_FROM ?? "Deqly <noreply@deqly.com>",
             to: email,
             subject: "Sign in to Deqly",
-            template: {
-              id: templateId,
-              variables: {
-                MAGIC_LINK: url,
-                EMAIL: email,
-              },
-            },
+            html: buildMagicLinkHtml(verifyUrl),
+            text: buildMagicLinkText(verifyUrl),
           });
         },
         expiresIn: 600,

@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as UsernameRouteImport } from './routes/$username'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
@@ -41,6 +42,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AuthVerifyRoute = AuthVerifyRouteImport.update({
+  id: '/auth/verify',
+  path: '/auth/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppProfileRoute = AppProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof AppProfileRoute
+  '/auth/verify': typeof AuthVerifyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
@@ -65,6 +72,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof AppProfileRoute
+  '/auth/verify': typeof AuthVerifyRoute
   '/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/_app/profile': typeof AppProfileRoute
+  '/auth/verify': typeof AuthVerifyRoute
   '/_app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
@@ -86,9 +95,17 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/profile'
+    | '/auth/verify'
     | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/$username' | '/login' | '/onboarding' | '/profile' | '/' | '/api/auth/$'
+  to:
+    | '/$username'
+    | '/login'
+    | '/onboarding'
+    | '/profile'
+    | '/auth/verify'
+    | '/'
+    | '/api/auth/$'
   id:
     | '__root__'
     | '/$username'
@@ -96,6 +113,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/_app/profile'
+    | '/auth/verify'
     | '/_app/'
     | '/api/auth/$'
   fileRoutesById: FileRoutesById
@@ -105,6 +123,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
+  AuthVerifyRoute: typeof AuthVerifyRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -145,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/auth/verify': {
+      id: '/auth/verify'
+      path: '/auth/verify'
+      fullPath: '/auth/verify'
+      preLoaderRoute: typeof AuthVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/profile': {
       id: '/_app/profile'
       path: '/profile'
@@ -179,6 +205,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
+  AuthVerifyRoute: AuthVerifyRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
