@@ -12,8 +12,11 @@ const loginSearchSchema = z.object({
 export const Route = createFileRoute('/login')({
   component: LoginPage,
   validateSearch: loginSearchSchema,
-  beforeLoad: ({ context }) => {
-    if (context.isAuthenticated) {
+  beforeLoad: ({ context, search }) => {
+    // A reused/expired magic link redirects here with ?error=... even when a
+    // session already exists from the link's first use. Let that message
+    // render instead of bouncing the user into the app (and on to onboarding).
+    if (context.isAuthenticated && !search.error) {
       throw redirect({ to: '/' })
     }
   },

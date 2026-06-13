@@ -1,4 +1,4 @@
-import { Link, createFileRoute, redirect } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { z } from 'zod'
 import { PageFooter } from '~/components/login/page-footer'
@@ -10,17 +10,41 @@ const verifySearchSchema = z.object({
 
 export const Route = createFileRoute('/auth/verify')({
   validateSearch: verifySearchSchema,
-  beforeLoad: ({ context }) => {
-    if (context.isAuthenticated) {
-      throw redirect({ to: '/' })
-    }
-  },
   component: VerifyPage,
 })
 
 function VerifyPage() {
   const { token } = Route.useSearch()
+  const { isAuthenticated } = Route.useRouteContext()
   const [verifying, setVerifying] = useState(false)
+
+  // A session already exists — this link was almost certainly used once
+  // already. Don't auto-redirect (that silently lands un-onboarded users on
+  // the onboarding page); tell them, and let them continue on their own.
+  if (isAuthenticated) {
+    return (
+      <div className="relative isolate min-h-dvh bg-white flex flex-col">
+        <div className="flex-1 flex flex-col items-center justify-center px-8">
+          <h2 className="text-2xl font-bold mb-3 text-center">
+            This sign-in link was already used
+          </h2>
+          <p className="text-gray-400 text-sm text-center leading-relaxed max-w-xs">
+            You're already signed in to Deqly. Magic links can only be used
+            once.
+          </p>
+          <Button
+            variant="violet"
+            nativeButton={false}
+            className="mt-8 px-8 h-12 rounded-full text-sm font-semibold shadow-lg shadow-violet-200"
+            render={<Link to="/" />}
+          >
+            Continue to Deqly
+          </Button>
+        </div>
+        <PageFooter />
+      </div>
+    )
+  }
 
   const handleVerify = () => {
     if (!token || verifying) {
