@@ -181,6 +181,19 @@ export const getCurrentUser = query({
     const bannerImageUrl = user.bannerImageId
       ? await ctx.storage.getUrl(user.bannerImageId)
       : null;
-    return { ...user, avatarImageUrl, bannerImageUrl };
+    // Uncropped originals — owner-only, used to re-crop avatar/banner losslessly
+    const originalAvatarImageUrl = user.originalAvatarImageId
+      ? await ctx.storage.getUrl(user.originalAvatarImageId)
+      : null;
+    const originalBannerImageUrl = user.originalBannerImageId
+      ? await ctx.storage.getUrl(user.originalBannerImageId)
+      : null;
+    return {
+      ...user,
+      avatarImageUrl,
+      bannerImageUrl,
+      originalAvatarImageUrl,
+      originalBannerImageUrl,
+    };
   },
 });

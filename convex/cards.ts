@@ -1,6 +1,6 @@
 import { v } from 'convex/values'
 import { type QueryCtx, mutation, query } from './_generated/server'
-import type { Doc } from './_generated/dataModel'
+import type { Doc, Id } from './_generated/dataModel'
 import { getUser } from './auth'
 
 const MAX_CARDS = 2
@@ -16,14 +16,25 @@ const storyBlockValidator = v.object({
   description: v.optional(v.string()),
 })
 
+const cropDataValidator = v.object({
+  crop: v.object({ x: v.number(), y: v.number() }),
+  zoom: v.number(),
+})
+
 async function withImageUrls(
   ctx: QueryCtx,
   cards: Array<Doc<'cards'>>,
+  // Only the owner needs the uncropped original (for re-cropping); never expose it publicly.
+  includeOriginal = false,
 ) {
   return Promise.all(
     cards.map(async (card) => ({
       ...card,
       imageUrl: card.imageId ? await ctx.storage.getUrl(card.imageId) : null,
+      originalImageUrl:
+        includeOriginal && card.originalImageId
+          ? await ctx.storage.getUrl(card.originalImageId)
+          : null,
     })),
   )
 }
@@ -37,7 +48,7 @@ export const listMyCards = query({
       .withIndex('by_userId', (q) => q.eq('userId', user._id))
       .collect()
     const sorted = cards.sort((a, b) => a.order - b.order)
-    return withImageUrls(ctx, sorted)
+    return withImageUrls(ctx, sorted, true)
   },
 })
 
@@ -178,6 +189,9 @@ export const deleteCard = mutation({
     if (card.imageId) {
       await ctx.storage.delete(card.imageId)
     }
+    if (card.originalImageId) {
+      await ctx.storage.delete(card.originalImageId)
+    }
 
     await ctx.db.delete(args.cardId)
 
@@ -198,7 +212,11 @@ export const deleteCard = mutation({
 export const updateCardImage = mutation({
   args: {
     cardId: v.id('cards'),
+    // The cropped image shown on the card
     storageId: v.id('_storage'),
+    // The uncropped source — sent only on a fresh upload, omitted when re-cropping
+    originalStorageId: v.optional(v.id('_storage')),
+    cropData: v.optional(cropDataValidator),
   },
   handler: async (ctx, args) => {
     const user = await getUser(ctx)
@@ -212,6 +230,22 @@ export const updateCardImage = mutation({
       await ctx.storage.delete(card.imageId)
     }
 
-    await ctx.db.patch(args.cardId, { imageId: args.storageId })
+    const patch: {
+      imageId: Id<'_storage'>
+      originalImageId?: Id<'_storage'>
+      cropData?: typeof args.cropData
+    } = { imageId: args.storageId, cropData: args.cropData }
+
+    if (args.originalStorageId) {
+      if (
+        card.originalImageId &&
+        card.originalImageId !== args.originalStorageId
+      ) {
+        await ctx.storage.delete(card.originalImageId)
+      }
+      patch.originalImageId = args.originalStorageId
+    }
+
+    await ctx.db.patch(args.cardId, patch)
   },
 })

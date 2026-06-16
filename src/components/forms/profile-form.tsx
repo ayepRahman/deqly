@@ -1,10 +1,20 @@
 import { ArrowLeft } from 'lucide-react'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { CameraIcon } from '~/components/cards/card-icons'
+import type { CropData } from '~/components/cards/types'
 import { Button } from '~/components/ui/button'
 import { useImageUpload } from '~/hooks/use-image-upload'
 import { type ProfileValues, profileSchema } from '~/lib/validations'
+import {
+  BANNER_ASPECT,
+  CARD_ASPECT,
+  type CropResult,
+  ImageCropDialog,
+} from './image-crop-dialog'
+import { ImageEditMenu } from './image-edit-menu'
 import { useAppForm } from './form'
+
+type ImageType = 'avatar' | 'banner'
 
 interface CurrentUser {
   name?: string | null
@@ -16,6 +26,10 @@ interface CurrentUser {
   addWebsiteToCard?: boolean | null
   avatarImageUrl?: string | null
   bannerImageUrl?: string | null
+  originalAvatarImageUrl?: string | null
+  originalBannerImageUrl?: string | null
+  avatarCropData?: CropData | null
+  bannerCropData?: CropData | null
 }
 
 interface ProfileFormProps {
@@ -40,9 +54,73 @@ export function ProfileForm({
   const bannerUpload = useImageUpload('banner')
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const bannerInputRef = useRef<HTMLInputElement>(null)
+  const originalFileRef = useRef<File | null>(null)
 
   const avatarUrl = currentUser.avatarImageUrl ?? null
   const bannerUrl = currentUser.bannerImageUrl ?? null
+
+  const [cropDialog, setCropDialog] = useState<{
+    open: boolean
+    imageSrc: string
+    type: ImageType
+    mode: 'new' | 'recrop'
+    initialCrop?: { x: number; y: number }
+    initialZoom?: number
+  }>({ open: false, imageSrc: '', type: 'avatar', mode: 'new' })
+
+  const handleChangePhoto = (type: ImageType) => {
+    const input = type === 'avatar' ? avatarInputRef : bannerInputRef
+    input.current?.click()
+  }
+
+  const handleAdjustCrop = (type: ImageType) => {
+    const imageSrc =
+      type === 'avatar'
+        ? (currentUser.originalAvatarImageUrl ?? avatarUrl)
+        : (currentUser.originalBannerImageUrl ?? bannerUrl)
+    if (!imageSrc) return
+    const cropData =
+      type === 'avatar' ? currentUser.avatarCropData : currentUser.bannerCropData
+    originalFileRef.current = null
+    setCropDialog({
+      open: true,
+      imageSrc,
+      type,
+      mode: 'recrop',
+      initialCrop: cropData?.crop,
+      initialZoom: cropData?.zoom,
+    })
+  }
+
+  const handleFileSelected = (type: ImageType, file: File) => {
+    originalFileRef.current = file
+    setCropDialog({
+      open: true,
+      imageSrc: URL.createObjectURL(file),
+      type,
+      mode: 'new',
+    })
+  }
+
+  const closeCropDialog = () => {
+    if (cropDialog.imageSrc.startsWith('blob:')) {
+      URL.revokeObjectURL(cropDialog.imageSrc)
+    }
+    setCropDialog({ open: false, imageSrc: '', type: 'avatar', mode: 'new' })
+  }
+
+  const handleCropConfirm = async (result: CropResult) => {
+    const { type, mode } = cropDialog
+    const originalFile = originalFileRef.current
+    closeCropDialog()
+    const uploader = type === 'avatar' ? avatarUpload : bannerUpload
+    await uploader.upload({
+      croppedBlob: result.blob,
+      originalFile: mode === 'new' ? (originalFile ?? undefined) : undefined,
+      cropData: { crop: result.crop, zoom: result.zoom },
+    })
+    originalFileRef.current = null
+  }
 
   const form = useAppForm({
     defaultValues: {
@@ -66,28 +144,47 @@ export function ProfileForm({
 
   return (
     <div className="min-h-dvh bg-white flex flex-col">
+      <ImageCropDialog
+        open={cropDialog.open}
+        imageSrc={cropDialog.imageSrc}
+        aspect={cropDialog.type === 'banner' ? BANNER_ASPECT : CARD_ASPECT}
+        initialCrop={cropDialog.initialCrop}
+        initialZoom={cropDialog.initialZoom}
+        onConfirm={handleCropConfirm}
+        onClose={closeCropDialog}
+      />
+
       {/* Banner */}
       <div className="relative h-28 bg-neutral-100 group">
         {bannerUrl ? (
-          <img
-            src={bannerUrl}
-            alt="Banner"
-            className="w-full h-full object-cover"
-          />
+          <ImageEditMenu
+            onAdjustCrop={() => handleAdjustCrop('banner')}
+            onChangePhoto={() => handleChangePhoto('banner')}
+            disabled={bannerUpload.isUploading}
+            isUploading={bannerUpload.isUploading}
+            overlayLabel="Change banner"
+            triggerClassName="h-full w-full rounded-none"
+            badgeClassName="bottom-2 right-2"
+            contentAlign="end"
+          >
+            <img
+              src={bannerUrl}
+              alt="Banner"
+              className="h-full w-full object-cover"
+            />
+          </ImageEditMenu>
         ) : (
-          <div className="w-full h-full bg-gradient-to-r from-violet-500/20 to-violet-500/10" />
+          <Button
+            type="button"
+            variant="ghost"
+            isLoading={bannerUpload.isUploading}
+            onClick={() => handleChangePhoto('banner')}
+            className="absolute inset-0 size-auto rounded-none bg-gradient-to-r from-violet-500/20 to-violet-500/10 text-violet-700 hover:bg-black/5"
+          >
+            <CameraIcon className="size-5" />
+            <span className="ml-1.5 text-xs">Add banner</span>
+          </Button>
         )}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          isLoading={bannerUpload.isUploading}
-          onClick={() => bannerInputRef.current?.click()}
-          className="absolute inset-0 size-auto rounded-none bg-black/30 text-white opacity-0 transition-opacity hover:bg-black/30 group-hover:opacity-100"
-        >
-          <CameraIcon className="size-5" />
-          <span className="ml-1.5 text-xs">Change banner</span>
-        </Button>
         <input
           ref={bannerInputRef}
           type="file"
@@ -95,7 +192,7 @@ export function ProfileForm({
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0]
-            if (file) bannerUpload.upload(file)
+            if (file) handleFileSelected('banner', file)
             e.target.value = ''
           }}
         />
@@ -116,28 +213,33 @@ export function ProfileForm({
       <div className="px-8 -mt-10 mb-4">
         <div className="relative w-20 h-20 rounded-full border-4 border-white bg-neutral-200 overflow-hidden group">
           {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt="Avatar"
-              className="w-full h-full object-cover"
-            />
+            <ImageEditMenu
+              onAdjustCrop={() => handleAdjustCrop('avatar')}
+              onChangePhoto={() => handleChangePhoto('avatar')}
+              disabled={avatarUpload.isUploading}
+              isUploading={avatarUpload.isUploading}
+              overlayLabel=""
+              triggerClassName="absolute inset-0 h-full w-full rounded-full"
+              badgeClassName="bottom-0.5 right-0.5 p-1"
+            >
+              <img
+                src={avatarUrl}
+                alt="Avatar"
+                className="h-full w-full object-cover"
+              />
+            </ImageEditMenu>
           ) : (
-            <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white text-2xl font-bold">
-              {(currentUser.name ?? currentUser.username ?? '?')
-                .charAt(0)
-                .toUpperCase()}
-            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              isLoading={avatarUpload.isUploading}
+              onClick={() => handleChangePhoto('avatar')}
+              className="absolute inset-0 size-auto rounded-full bg-violet-500 text-white hover:bg-violet-500/90"
+            >
+              <CameraIcon className="size-4" />
+            </Button>
           )}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            isLoading={avatarUpload.isUploading}
-            onClick={() => avatarInputRef.current?.click()}
-            className="absolute inset-0 size-auto rounded-full bg-black/30 text-white opacity-0 transition-opacity hover:bg-black/30 group-hover:opacity-100"
-          >
-            <CameraIcon className="size-4" />
-          </Button>
           <input
             ref={avatarInputRef}
             type="file"
@@ -145,7 +247,7 @@ export function ProfileForm({
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0]
-              if (file) avatarUpload.upload(file)
+              if (file) handleFileSelected('avatar', file)
               e.target.value = ''
             }}
           />

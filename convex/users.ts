@@ -1,6 +1,12 @@
 import { ConvexError, v } from 'convex/values'
 import { mutation, query } from './_generated/server'
+import type { Id } from './_generated/dataModel'
 import { getUser } from './auth'
+
+const cropDataValidator = v.object({
+  crop: v.object({ x: v.number(), y: v.number() }),
+  zoom: v.number(),
+})
 
 export const getByUsername = query({
   args: { username: v.string() },
@@ -41,7 +47,11 @@ export const getByUsername = query({
 })
 
 export const updateAvatar = mutation({
-  args: { storageId: v.id('_storage') },
+  args: {
+    storageId: v.id('_storage'),
+    originalStorageId: v.optional(v.id('_storage')),
+    cropData: v.optional(cropDataValidator),
+  },
   handler: async (ctx, args) => {
     const currentUser = await getUser(ctx)
     if (
@@ -50,12 +60,33 @@ export const updateAvatar = mutation({
     ) {
       await ctx.storage.delete(currentUser.avatarImageId)
     }
-    await ctx.db.patch(currentUser._id, { avatarImageId: args.storageId })
+
+    const patch: {
+      avatarImageId: Id<'_storage'>
+      originalAvatarImageId?: Id<'_storage'>
+      avatarCropData?: typeof args.cropData
+    } = { avatarImageId: args.storageId, avatarCropData: args.cropData }
+
+    if (args.originalStorageId) {
+      if (
+        currentUser.originalAvatarImageId &&
+        currentUser.originalAvatarImageId !== args.originalStorageId
+      ) {
+        await ctx.storage.delete(currentUser.originalAvatarImageId)
+      }
+      patch.originalAvatarImageId = args.originalStorageId
+    }
+
+    await ctx.db.patch(currentUser._id, patch)
   },
 })
 
 export const updateBanner = mutation({
-  args: { storageId: v.id('_storage') },
+  args: {
+    storageId: v.id('_storage'),
+    originalStorageId: v.optional(v.id('_storage')),
+    cropData: v.optional(cropDataValidator),
+  },
   handler: async (ctx, args) => {
     const currentUser = await getUser(ctx)
     if (
@@ -64,7 +95,24 @@ export const updateBanner = mutation({
     ) {
       await ctx.storage.delete(currentUser.bannerImageId)
     }
-    await ctx.db.patch(currentUser._id, { bannerImageId: args.storageId })
+
+    const patch: {
+      bannerImageId: Id<'_storage'>
+      originalBannerImageId?: Id<'_storage'>
+      bannerCropData?: typeof args.cropData
+    } = { bannerImageId: args.storageId, bannerCropData: args.cropData }
+
+    if (args.originalStorageId) {
+      if (
+        currentUser.originalBannerImageId &&
+        currentUser.originalBannerImageId !== args.originalStorageId
+      ) {
+        await ctx.storage.delete(currentUser.originalBannerImageId)
+      }
+      patch.originalBannerImageId = args.originalStorageId
+    }
+
+    await ctx.db.patch(currentUser._id, patch)
   },
 })
 

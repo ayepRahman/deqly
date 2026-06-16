@@ -18,6 +18,11 @@ export const CARD_COLORS = [
 
 export const DEFAULT_CARD_COLOR = CARD_COLORS[0]
 
+export interface CropData {
+  crop: { x: number; y: number }
+  zoom: number
+}
+
 export interface StoryBlock {
   title: string
   subheader?: string
@@ -28,6 +33,8 @@ export interface CardData {
   _id: Id<'cards'>
   type: 'showcase' | 'story'
   imageUrl?: string | null
+  originalImageUrl?: string | null
+  cropData?: CropData | null
   name?: string
   occupation?: string
   description?: string
@@ -71,6 +78,10 @@ export interface UserData {
   addWebsiteToCard?: boolean
   avatarImageUrl?: string | null
   bannerImageUrl?: string | null
+  originalAvatarImageUrl?: string | null
+  originalBannerImageUrl?: string | null
+  avatarCropData?: CropData | null
+  bannerCropData?: CropData | null
   description?: string
   cardColor?: string
 }

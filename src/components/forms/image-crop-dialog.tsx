@@ -10,7 +10,14 @@ import {
 } from '~/components/ui/dialog'
 
 // Matches the card image area: 320px wide / 416px tall (576 total - 160 bottom section)
-const ASPECT_RATIO = 320 / 416
+export const CARD_ASPECT = 320 / 416
+// Wide banner area (full-width, h-28 in profile-form)
+export const BANNER_ASPECT = 4 / 1
+
+interface CropPosition {
+  x: number
+  y: number
+}
 
 interface CroppedAreaPixels {
   x: number
@@ -19,11 +26,20 @@ interface CroppedAreaPixels {
   height: number
 }
 
+export interface CropResult {
+  blob: Blob
+  crop: CropPosition
+  zoom: number
+}
+
 interface ImageCropDialogProps {
   open: boolean
   imageSrc: string
-  onConfirm: (blob: Blob) => void
+  onConfirm: (result: CropResult) => void
   onClose: () => void
+  aspect?: number
+  initialCrop?: CropPosition
+  initialZoom?: number
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -73,20 +89,24 @@ export function ImageCropDialog({
   imageSrc,
   onConfirm,
   onClose,
+  aspect = CARD_ASPECT,
+  initialCrop,
+  initialZoom,
 }: ImageCropDialogProps) {
-  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [crop, setCrop] = useState<CropPosition>({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] =
     useState<CroppedAreaPixels | null>(null)
 
-  // Reset crop/zoom each time a new image is loaded
+  // Seed crop/zoom each time a new image is loaded — from the saved framing when
+  // re-cropping, otherwise reset to defaults for a fresh upload.
   useEffect(() => {
     if (imageSrc) {
-      setCrop({ x: 0, y: 0 })
-      setZoom(1)
+      setCrop(initialCrop ?? { x: 0, y: 0 })
+      setZoom(initialZoom ?? 1)
       setCroppedAreaPixels(null)
     }
-  }, [imageSrc])
+  }, [imageSrc, initialCrop, initialZoom])
 
   const onCropComplete = useCallback(
     (_: unknown, pixels: CroppedAreaPixels) => {
@@ -98,7 +118,7 @@ export function ImageCropDialog({
   const handleConfirm = async () => {
     if (!croppedAreaPixels) return
     const blob = await getCroppedBlob(imageSrc, croppedAreaPixels)
-    onConfirm(blob)
+    onConfirm({ blob, crop, zoom })
   }
 
   return (
@@ -115,7 +135,7 @@ export function ImageCropDialog({
               image={imageSrc}
               crop={crop}
               zoom={zoom}
-              aspect={ASPECT_RATIO}
+              aspect={aspect}
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={onCropComplete}

@@ -2,6 +2,7 @@ import { Pencil, X } from 'lucide-react'
 import { useMemo } from 'react'
 import { generateVCard } from '~/lib/vcard'
 import { Button } from '../ui/button'
+import { ImageEditMenu } from '../forms/image-edit-menu'
 import { CardQrBack } from './card-qr-back'
 import { ImagePlaceholderIcon, LogoMask } from './card-icons'
 import { ColorPicker } from './color-picker'
@@ -26,7 +27,8 @@ interface ProfileCardProps {
   readOnly?: boolean
   isActive?: boolean
   isFlipped?: boolean
-  onImageClick?: () => void
+  onChangePhoto?: () => void
+  onAdjustCrop?: () => void
   onStartEdit?: () => void
   onCancelEdit?: () => void
   onEditFormChange?: (form: ProfileEditForm) => void
@@ -44,7 +46,8 @@ export function ProfileCard({
   readOnly = false,
   isActive = true,
   isFlipped = false,
-  onImageClick,
+  onChangePhoto,
+  onAdjustCrop,
   onStartEdit,
   onCancelEdit,
   onEditFormChange,
@@ -191,21 +194,21 @@ export function ProfileCard({
             className="absolute inset-0 w-full h-full object-cover"
           />
         ) : (
-          <Button
-            onClick={onImageClick}
+          <ImageEditMenu
+            onAdjustCrop={() => onAdjustCrop?.()}
+            onChangePhoto={() => onChangePhoto?.()}
             disabled={isUploading}
-            variant="ghost"
-            className="absolute inset-0 w-full h-full p-0 rounded-none group"
+            isUploading={isUploading}
+            overlayLabel="Change photo"
+            triggerClassName="absolute inset-0 w-full h-full rounded-none"
+            badgeClassName="bottom-[190px] right-3"
           >
             <img
               src={user.avatarImageUrl}
               alt="Profile"
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-sm">
-              {isUploading ? 'Uploading...' : 'Change photo'}
-            </div>
-          </Button>
+          </ImageEditMenu>
         )}
 
         <div
@@ -247,7 +250,7 @@ export function ProfileCard({
           </div>
         ) : (
           <Button
-            onClick={onImageClick}
+            onClick={onChangePhoto}
             disabled={isUploading}
             variant="ghost"
             className="w-full flex-1 rounded-2xl border-2 border-stone-300 flex flex-col items-center justify-center gap-3 hover:border-neutral-400 whitespace-normal overflow-hidden"

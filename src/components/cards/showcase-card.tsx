@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../ui/dialog'
+import { ImageEditMenu } from '../forms/image-edit-menu'
 import { ImagePlaceholderIcon, LogoMask } from './card-icons'
 import { CardQrBack } from './card-qr-back'
 import { ColorPicker } from './color-picker'
@@ -35,7 +36,8 @@ interface ShowcaseCardProps {
   readOnly?: boolean
   isActive?: boolean
   isFlipped?: boolean
-  onImageClick?: () => void
+  onChangePhoto?: () => void
+  onAdjustCrop?: () => void
   onStartEdit?: (card: CardData) => void
   onCancelEdit?: () => void
   onDeleteCard?: (id: Id<'cards'>) => void
@@ -88,7 +90,8 @@ export function ShowcaseCard({
   readOnly = false,
   isActive = true,
   isFlipped = false,
-  onImageClick,
+  onChangePhoto,
+  onAdjustCrop,
   onStartEdit,
   onCancelEdit,
   onDeleteCard,
@@ -250,21 +253,21 @@ export function ShowcaseCard({
             className="absolute inset-0 w-full h-full object-cover"
           />
         ) : (
-          <Button
-            onClick={onImageClick}
+          <ImageEditMenu
+            onAdjustCrop={() => onAdjustCrop?.()}
+            onChangePhoto={() => onChangePhoto?.()}
             disabled={isUploading}
-            variant="ghost"
-            className="absolute inset-0 w-full h-full p-0 rounded-none group"
+            isUploading={isUploading}
+            overlayLabel="Change image"
+            triggerClassName="absolute inset-0 w-full h-full rounded-none"
+            badgeClassName="bottom-[190px] right-3"
           >
             <img
               src={card.imageUrl}
               alt="Card showcase"
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-sm">
-              {isUploading ? 'Uploading...' : 'Change image'}
-            </div>
-          </Button>
+          </ImageEditMenu>
         )}
 
         {/* Accent bottom */}
@@ -358,7 +361,7 @@ export function ShowcaseCard({
           </div>
         ) : (
           <Button
-            onClick={onImageClick}
+            onClick={onChangePhoto}
             disabled={isUploading}
             variant="ghost"
             className="w-full flex-1 rounded-2xl border-2 border-stone-300 flex flex-col items-center justify-center gap-3 hover:border-neutral-400 whitespace-normal overflow-hidden"

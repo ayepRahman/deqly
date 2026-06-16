@@ -1,12 +1,21 @@
 import { useMutation } from 'convex/react'
 import { useState } from 'react'
+import type { CropData } from '~/components/cards/types'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 
 type ImageType = 'avatar' | 'banner'
 
+interface UploadArgs {
+  /** The cropped image shown to viewers. */
+  croppedBlob: Blob
+  /** The uncropped source — pass only on a fresh upload (omit when re-cropping). */
+  originalFile?: File
+  cropData: CropData
+}
+
 interface UseImageUploadReturn {
-  upload: (file: File) => Promise<void>
+  upload: (args: UploadArgs) => Promise<void>
   isUploading: boolean
   error: string | null
 }
@@ -19,31 +28,39 @@ export function useImageUpload(type: ImageType): UseImageUploadReturn {
   const updateAvatar = useMutation(api.users.updateAvatar)
   const updateBanner = useMutation(api.users.updateBanner)
 
-  const upload = async (file: File) => {
+  const uploadBlob = async (file: File | Blob): Promise<Id<'_storage'>> => {
+    const uploadUrl = await generateUploadUrl({})
+    const uploadRes = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': file.type },
+      body: file,
+    })
+    if (!uploadRes.ok) {
+      throw new Error('Upload to Convex storage failed')
+    }
+    const { storageId } = (await uploadRes.json()) as {
+      storageId: Id<'_storage'>
+    }
+    return storageId
+  }
+
+  const upload = async ({ croppedBlob, originalFile, cropData }: UploadArgs) => {
     setIsUploading(true)
     setError(null)
 
     try {
-      const uploadUrl = await generateUploadUrl({})
-
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': file.type },
-        body: file,
+      const croppedFile = new File([croppedBlob], 'image.jpg', {
+        type: 'image/jpeg',
       })
-
-      if (!uploadRes.ok) {
-        throw new Error('Upload to Convex storage failed')
-      }
-
-      const { storageId } = (await uploadRes.json()) as {
-        storageId: Id<'_storage'>
-      }
+      const storageId = await uploadBlob(croppedFile)
+      const originalStorageId = originalFile
+        ? await uploadBlob(originalFile)
+        : undefined
 
       if (type === 'avatar') {
-        await updateAvatar({ storageId })
+        await updateAvatar({ storageId, originalStorageId, cropData })
       } else {
-        await updateBanner({ storageId })
+        await updateBanner({ storageId, originalStorageId, cropData })
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Upload failed')

@@ -16,7 +16,10 @@ import {
   type ShowcaseEditForm,
   type StoryEditForm,
 } from '~/components/cards/types'
-import { ImageCropDialog } from '~/components/forms/image-crop-dialog'
+import {
+  type CropResult,
+  ImageCropDialog,
+} from '~/components/forms/image-crop-dialog'
 import { SelectCardTypeDialog } from '~/components/forms/select-card-type-dialog'
 import { PageFooter } from '~/components/login/page-footer'
 import { Button } from '~/components/ui/button'
@@ -72,9 +75,15 @@ function AppHome() {
     open: boolean
     imageSrc: string
     target: UploadTarget | null
-  }>({ open: false, imageSrc: '', target: null })
+    mode: 'new' | 'recrop'
+    initialCrop?: { x: number; y: number }
+    initialZoom?: number
+  }>({ open: false, imageSrc: '', target: null, mode: 'new' })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const uploadTarget = useRef<UploadTarget | null>(null)
+  // Holds the uncropped file selected for a fresh upload, so it can be stored
+  // alongside the cropped result for lossless re-cropping later.
+  const originalFileRef = useRef<File | null>(null)
 
   const isAnyEditing = editingCardId !== null || isEditingProfileCard
   const isAnyEditingRef = useRef(isAnyEditing)
@@ -255,48 +264,94 @@ function AppHome() {
     })
   }
 
-  const handleProfileImageClick = () => {
-    uploadTarget.current = { type: 'profile' }
+  // "Change photo" — pick a brand-new file, then crop it.
+  const handleChangePhoto = (target: UploadTarget) => {
+    uploadTarget.current = target
     fileInputRef.current?.click()
   }
 
-  const handleCardImageClick = (cardId: Id<'cards'>) => {
-    uploadTarget.current = { type: 'card', cardId }
-    fileInputRef.current?.click()
+  // "Adjust crop" — re-open the cropper on the stored original (falls back to the
+  // displayed image for pre-existing uploads that have no original).
+  const handleAdjustCrop = (target: UploadTarget) => {
+    let imageSrc: string | null | undefined
+    let cropData: { crop: { x: number; y: number }; zoom: number } | null | undefined
+    if (target.type === 'profile') {
+      imageSrc = currentUser?.originalAvatarImageUrl ?? currentUser?.avatarImageUrl
+      cropData = currentUser?.avatarCropData
+    } else {
+      const card = cards.find((c) => c._id === target.cardId)
+      imageSrc = card?.originalImageUrl ?? card?.imageUrl
+      cropData = card?.cropData
+    }
+    if (!imageSrc) return
+    originalFileRef.current = null
+    setCropDialog({
+      open: true,
+      imageSrc,
+      target,
+      mode: 'recrop',
+      initialCrop: cropData?.crop,
+      initialZoom: cropData?.zoom,
+    })
   }
 
-  const handleImageUpload = async (file: File, target: UploadTarget) => {
+  const uploadBlob = async (file: File | Blob): Promise<Id<'_storage'>> => {
+    const uploadUrl = await generateUploadUrl({})
+    const uploadRes = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': file.type },
+      body: file,
+    })
+    if (!uploadRes.ok) throw new Error('Upload failed')
+    const { storageId } = (await uploadRes.json()) as {
+      storageId: Id<'_storage'>
+    }
+    return storageId
+  }
+
+  const closeCropDialog = () => {
+    if (cropDialog.imageSrc.startsWith('blob:')) {
+      URL.revokeObjectURL(cropDialog.imageSrc)
+    }
+    setCropDialog({ open: false, imageSrc: '', target: null, mode: 'new' })
+  }
+
+  const handleCropConfirm = async (result: CropResult) => {
+    const { target, mode } = cropDialog
+    const originalFile = originalFileRef.current
+    closeCropDialog()
+    if (!target) return
+
+    const croppedFile = new File([result.blob], 'image.jpg', {
+      type: 'image/jpeg',
+    })
+    const cropData = { crop: result.crop, zoom: result.zoom }
+
     setIsUploading(true)
     try {
-      const uploadUrl = await generateUploadUrl({})
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': file.type },
-        body: file,
-      })
-      if (!uploadRes.ok) throw new Error('Upload failed')
-      const { storageId } = (await uploadRes.json()) as {
-        storageId: Id<'_storage'>
-      }
+      const storageId = await uploadBlob(croppedFile)
+      // Only a fresh upload carries a new original; re-crops reuse the stored one.
+      const originalStorageId =
+        mode === 'new' && originalFile
+          ? await uploadBlob(originalFile)
+          : undefined
+
       if (target.type === 'profile') {
-        await updateAvatar({ storageId })
+        await updateAvatar({ storageId, originalStorageId, cropData })
       } else {
-        await updateCardImage({ cardId: target.cardId, storageId })
+        await updateCardImage({
+          cardId: target.cardId,
+          storageId,
+          originalStorageId,
+          cropData,
+        })
       }
     } catch (_err) {
       // Upload failed
     } finally {
       setIsUploading(false)
+      originalFileRef.current = null
     }
-  }
-
-  const handleCropConfirm = async (blob: Blob) => {
-    const target = cropDialog.target
-    URL.revokeObjectURL(cropDialog.imageSrc)
-    setCropDialog({ open: false, imageSrc: '', target: null })
-    if (!target) return
-    const file = new File([blob], 'image.jpg', { type: 'image/jpeg' })
-    await handleImageUpload(file, target)
   }
 
   if (currentUser === undefined) {
@@ -348,7 +403,8 @@ function AppHome() {
         isUploading={isUploading}
         showcaseEditForm={showcaseEditForm}
         userData={currentUser}
-        onImageClick={() => handleCardImageClick(card._id)}
+        onChangePhoto={() => handleChangePhoto({ type: 'card', cardId: card._id })}
+        onAdjustCrop={() => handleAdjustCrop({ type: 'card', cardId: card._id })}
         onShowcaseFormChange={setShowcaseEditForm}
         {...sharedCardProps}
       />
@@ -367,7 +423,8 @@ function AppHome() {
       isEditing={isEditingProfileCard}
       editForm={profileEditForm}
       userData={currentUser}
-      onImageClick={handleProfileImageClick}
+      onChangePhoto={() => handleChangePhoto({ type: 'profile' })}
+      onAdjustCrop={() => handleAdjustCrop({ type: 'profile' })}
       onStartEdit={handleStartProfileEdit}
       onCancelEdit={handleCancelProfileEdit}
       onEditFormChange={setProfileEditForm}
@@ -403,8 +460,9 @@ function AppHome() {
           const file = e.target.files?.[0]
           const target = uploadTarget.current
           if (file && target) {
+            originalFileRef.current = file
             const src = URL.createObjectURL(file)
-            setCropDialog({ open: true, imageSrc: src, target })
+            setCropDialog({ open: true, imageSrc: src, target, mode: 'new' })
           }
           e.target.value = ''
         }}
@@ -413,11 +471,10 @@ function AppHome() {
       <ImageCropDialog
         open={cropDialog.open}
         imageSrc={cropDialog.imageSrc}
+        initialCrop={cropDialog.initialCrop}
+        initialZoom={cropDialog.initialZoom}
         onConfirm={handleCropConfirm}
-        onClose={() => {
-          URL.revokeObjectURL(cropDialog.imageSrc)
-          setCropDialog({ open: false, imageSrc: '', target: null })
-        }}
+        onClose={closeCropDialog}
       />
 
       <div className="flex-1 px-6 py-8 flex flex-col items-center">
