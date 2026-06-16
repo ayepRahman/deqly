@@ -1,8 +1,9 @@
 import { ArrowLeft } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CameraIcon } from '~/components/cards/card-icons'
 import type { CropData } from '~/components/cards/types'
 import { Button } from '~/components/ui/button'
+import { useImagePreviews } from '~/hooks/use-image-previews'
 import { useImageUpload } from '~/hooks/use-image-upload'
 import { type ProfileValues, profileSchema } from '~/lib/validations'
 import {
@@ -59,6 +60,16 @@ export function ProfileForm({
   const avatarUrl = currentUser.avatarImageUrl ?? null
   const bannerUrl = currentUser.bannerImageUrl ?? null
 
+  // Optimistic previews: show the just-cropped blob until the stored image loads.
+  const imagePreviews = useImagePreviews()
+  const { reconcile: reconcilePreviews } = imagePreviews
+  useEffect(() => {
+    reconcilePreviews({ avatar: avatarUrl, banner: bannerUrl })
+  }, [avatarUrl, bannerUrl, reconcilePreviews])
+
+  const displayAvatarUrl = imagePreviews.previews.avatar?.url ?? avatarUrl
+  const displayBannerUrl = imagePreviews.previews.banner?.url ?? bannerUrl
+
   const [cropDialog, setCropDialog] = useState<{
     open: boolean
     imageSrc: string
@@ -114,11 +125,14 @@ export function ProfileForm({
     const originalFile = originalFileRef.current
     closeCropDialog()
     const uploader = type === 'avatar' ? avatarUpload : bannerUpload
-    await uploader.upload({
+    const baseUrl = type === 'avatar' ? avatarUrl : bannerUrl
+    imagePreviews.start(type, result.blob, baseUrl)
+    const ok = await uploader.upload({
       croppedBlob: result.blob,
       originalFile: mode === 'new' ? (originalFile ?? undefined) : undefined,
       cropData: { crop: result.crop, zoom: result.zoom },
     })
+    if (!ok) imagePreviews.clear(type)
     originalFileRef.current = null
   }
 
@@ -156,7 +170,7 @@ export function ProfileForm({
 
       {/* Banner */}
       <div className="relative h-28 bg-neutral-100 group">
-        {bannerUrl ? (
+        {displayBannerUrl ? (
           <ImageEditMenu
             onAdjustCrop={() => handleAdjustCrop('banner')}
             onChangePhoto={() => handleChangePhoto('banner')}
@@ -168,7 +182,7 @@ export function ProfileForm({
             contentAlign="end"
           >
             <img
-              src={bannerUrl}
+              src={displayBannerUrl}
               alt="Banner"
               className="h-full w-full object-cover"
             />
@@ -212,7 +226,7 @@ export function ProfileForm({
       {/* Avatar */}
       <div className="px-8 -mt-10 mb-4">
         <div className="relative w-20 h-20 rounded-full border-4 border-white bg-neutral-200 overflow-hidden group">
-          {avatarUrl ? (
+          {displayAvatarUrl ? (
             <ImageEditMenu
               onAdjustCrop={() => handleAdjustCrop('avatar')}
               onChangePhoto={() => handleChangePhoto('avatar')}
@@ -223,7 +237,7 @@ export function ProfileForm({
               badgeClassName="bottom-0.5 right-0.5 p-1"
             >
               <img
-                src={avatarUrl}
+                src={displayAvatarUrl}
                 alt="Avatar"
                 className="h-full w-full object-cover"
               />

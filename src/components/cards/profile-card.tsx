@@ -21,6 +21,7 @@ interface ProfileCardProps {
   index: number
   total: number
   isUploading?: boolean
+  previewUrl?: string | null
   isEditing?: boolean
   editForm?: ProfileEditForm
   userData: UserData | null | undefined
@@ -40,6 +41,7 @@ export function ProfileCard({
   index,
   total,
   isUploading = false,
+  previewUrl,
   isEditing = false,
   editForm,
   userData,
@@ -58,6 +60,8 @@ export function ProfileCard({
     : (user.cardColor ?? DEFAULT_CARD_COLOR.hex)
 
   const effectiveFlipped = isFlipped && !isEditing
+  // Prefer the optimistic preview blob over the stored image while it loads.
+  const displayUrl = previewUrl ?? user.avatarImageUrl
 
   const vCardData = useMemo(() => {
     if (!userData) return ''
@@ -182,14 +186,14 @@ export function ProfileCard({
     )
   }
 
-  if (user.avatarImageUrl) {
+  if (displayUrl) {
     const cardFront = (
       <div className="w-80 h-[576px] relative rounded-[20px] outline outline-2 outline-neutral-200 overflow-hidden">
         {topBar(true)}
 
         {readOnly ? (
           <img
-            src={user.avatarImageUrl}
+            src={displayUrl}
             alt="Profile"
             className="absolute inset-0 w-full h-full object-cover"
           />
@@ -204,7 +208,7 @@ export function ProfileCard({
             badgeClassName="bottom-[190px] right-3"
           >
             <img
-              src={user.avatarImageUrl}
+              src={displayUrl}
               alt="Profile"
               className="w-full h-full object-cover"
             />

@@ -15,7 +15,8 @@ interface UploadArgs {
 }
 
 interface UseImageUploadReturn {
-  upload: (args: UploadArgs) => Promise<void>
+  /** Resolves to true on success, false if the upload failed. */
+  upload: (args: UploadArgs) => Promise<boolean>
   isUploading: boolean
   error: string | null
 }
@@ -44,7 +45,11 @@ export function useImageUpload(type: ImageType): UseImageUploadReturn {
     return storageId
   }
 
-  const upload = async ({ croppedBlob, originalFile, cropData }: UploadArgs) => {
+  const upload = async ({
+    croppedBlob,
+    originalFile,
+    cropData,
+  }: UploadArgs): Promise<boolean> => {
     setIsUploading(true)
     setError(null)
 
@@ -62,8 +67,10 @@ export function useImageUpload(type: ImageType): UseImageUploadReturn {
       } else {
         await updateBanner({ storageId, originalStorageId, cropData })
       }
+      return true
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Upload failed')
+      return false
     } finally {
       setIsUploading(false)
     }

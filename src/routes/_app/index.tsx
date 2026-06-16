@@ -25,6 +25,7 @@ import { PageFooter } from '~/components/login/page-footer'
 import { Button } from '~/components/ui/button'
 import { PageLoader } from '~/components/ui/page-loader'
 import { ProfileDropdown } from '~/components/ui/profile-dropdown'
+import { useImagePreviews } from '~/hooks/use-image-previews'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 
@@ -84,6 +85,16 @@ function AppHome() {
   // Holds the uncropped file selected for a fresh upload, so it can be stored
   // alongside the cropped result for lossless re-cropping later.
   const originalFileRef = useRef<File | null>(null)
+  // Optimistic previews: show the just-cropped blob until the stored image loads.
+  const imagePreviews = useImagePreviews()
+  const { reconcile: reconcilePreviews } = imagePreviews
+  useEffect(() => {
+    const currentUrls: Record<string, string | null | undefined> = {
+      profile: currentUser?.avatarImageUrl,
+    }
+    for (const card of cards) currentUrls[card._id] = card.imageUrl
+    reconcilePreviews(currentUrls)
+  }, [cards, currentUser, reconcilePreviews])
 
   const isAnyEditing = editingCardId !== null || isEditingProfileCard
   const isAnyEditingRef = useRef(isAnyEditing)
@@ -327,6 +338,14 @@ function AppHome() {
     })
     const cropData = { crop: result.crop, zoom: result.zoom }
 
+    // Show the cropped result immediately, swapping to the stored image once ready.
+    const previewKey = target.type === 'profile' ? 'profile' : target.cardId
+    const baseUrl =
+      target.type === 'profile'
+        ? (currentUser?.avatarImageUrl ?? null)
+        : (cards.find((c) => c._id === target.cardId)?.imageUrl ?? null)
+    imagePreviews.start(previewKey, result.blob, baseUrl)
+
     setIsUploading(true)
     try {
       const storageId = await uploadBlob(croppedFile)
@@ -347,7 +366,8 @@ function AppHome() {
         })
       }
     } catch (_err) {
-      // Upload failed
+      // Upload failed — drop the optimistic preview so the prior image returns.
+      imagePreviews.clear(previewKey)
     } finally {
       setIsUploading(false)
       originalFileRef.current = null
@@ -401,6 +421,7 @@ function AppHome() {
         isActive={cardIsActive}
         isFlipped={cardIsActive && isFlipped}
         isUploading={isUploading}
+        previewUrl={imagePreviews.previews[card._id]?.url}
         showcaseEditForm={showcaseEditForm}
         userData={currentUser}
         onChangePhoto={() => handleChangePhoto({ type: 'card', cardId: card._id })}
@@ -420,6 +441,7 @@ function AppHome() {
       isActive={profileCardIsActive}
       isFlipped={profileCardIsActive && isFlipped}
       isUploading={isUploading}
+      previewUrl={imagePreviews.previews.profile?.url}
       isEditing={isEditingProfileCard}
       editForm={profileEditForm}
       userData={currentUser}

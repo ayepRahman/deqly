@@ -30,6 +30,7 @@ interface ShowcaseCardProps {
   index: number
   total: number
   isUploading?: boolean
+  previewUrl?: string | null
   editingCardId?: Id<'cards'> | null
   showcaseEditForm?: ShowcaseEditForm
   userData: UserData | null | undefined
@@ -84,6 +85,7 @@ export function ShowcaseCard({
   index,
   total,
   isUploading = false,
+  previewUrl,
   editingCardId = null,
   showcaseEditForm,
   userData,
@@ -106,6 +108,8 @@ export function ShowcaseCard({
 
   const [confirmDelete, setConfirmDelete] = useState(false)
   const effectiveFlipped = isFlipped && !isEditing
+  // Prefer the optimistic preview blob over the stored image while it loads.
+  const displayUrl = previewUrl ?? card.imageUrl
 
   const vCardData = useMemo(() => {
     if (!userData) return ''
@@ -200,7 +204,7 @@ export function ShowcaseCard({
     </div>
   )
 
-  if (card.imageUrl) {
+  if (displayUrl) {
     const cardFront = (
       <div className="w-80 h-[576px] relative rounded-[20px] outline outline-2 outline-neutral-200 overflow-hidden">
         {/* Top bar overlay */}
@@ -248,7 +252,7 @@ export function ShowcaseCard({
         {/* Full-bleed image */}
         {readOnly ? (
           <img
-            src={card.imageUrl}
+            src={displayUrl}
             alt="Card showcase"
             className="absolute inset-0 w-full h-full object-cover"
           />
@@ -263,7 +267,7 @@ export function ShowcaseCard({
             badgeClassName="bottom-[190px] right-3"
           >
             <img
-              src={card.imageUrl}
+              src={displayUrl}
               alt="Card showcase"
               className="w-full h-full object-cover"
             />
