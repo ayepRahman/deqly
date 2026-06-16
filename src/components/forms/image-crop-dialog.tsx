@@ -45,6 +45,9 @@ interface ImageCropDialogProps {
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
+    // Required so a remote (cross-origin) original can be drawn to a canvas
+    // without tainting it — otherwise canvas.toBlob() throws when re-cropping.
+    img.crossOrigin = 'anonymous'
     img.addEventListener('load', () => resolve(img))
     img.addEventListener('error', reject)
     img.src = src
