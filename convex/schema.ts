@@ -53,6 +53,24 @@ export default defineSchema({
     color: v.optional(v.string()),
     order: v.number(),
   }).index('by_userId', ['userId']),
+  // A logged-in viewer's recent views of other users' Deqlys. Deduped to one
+  // row per (viewer, viewed) pair; lastViewedAt is bumped on re-view.
+  recentlyViewed: defineTable({
+    viewerId: v.id('users'), // who viewed
+    viewedUserId: v.id('users'), // whose Deqly was viewed
+    lastViewedAt: v.number(), // bumped on re-view; drives the paginated sort
+  })
+    // Compound index lets us paginate in lastViewedAt-desc order directly.
+    .index('by_viewer_and_lastViewedAt', ['viewerId', 'lastViewedAt'])
+    .index('by_viewer_and_viewed', ['viewerId', 'viewedUserId']),
+  // Connections a user has saved to their collection. Live reference: only the
+  // FK is stored; the saved Deqly is resolved at query time.
+  collectedConnections: defineTable({
+    collectorId: v.id('users'), // who saved
+    savedUserId: v.id('users'), // the saved person
+  })
+    .index('by_collector', ['collectorId'])
+    .index('by_collector_and_saved', ['collectorId', 'savedUserId']),
   numbers: defineTable({
     value: v.number(),
   }),

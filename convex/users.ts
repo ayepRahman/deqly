@@ -1,12 +1,40 @@
 import { ConvexError, v } from 'convex/values'
-import { mutation, query } from './_generated/server'
-import type { Id } from './_generated/dataModel'
+import { type QueryCtx, mutation, query } from './_generated/server'
+import type { Doc, Id } from './_generated/dataModel'
 import { getUser } from './auth'
 
 const cropDataValidator = v.object({
   crop: v.object({ x: v.number(), y: v.number() }),
   zoom: v.number(),
 })
+
+// Curated, URL-resolved public view of a user's profile (their Deqly name card).
+// Never exposes auth-sensitive or uncropped-original fields. Shared by the public
+// profile route and the connections feature so they return an identical shape.
+export async function toPublicProfile(ctx: QueryCtx, user: Doc<'users'>) {
+  const avatarImageUrl = user.avatarImageId
+    ? await ctx.storage.getUrl(user.avatarImageId)
+    : null
+  const bannerImageUrl = user.bannerImageId
+    ? await ctx.storage.getUrl(user.bannerImageId)
+    : null
+
+  return {
+    _id: user._id,
+    name: user.name,
+    username: user.username,
+    email: user.email,
+    occupation: user.occupation,
+    mobileNumber: user.mobileNumber,
+    websiteLink: user.websiteLink,
+    addMobileToCard: user.addMobileToCard,
+    addWebsiteToCard: user.addWebsiteToCard,
+    avatarImageUrl,
+    bannerImageUrl,
+    description: user.description,
+    cardColor: user.cardColor,
+  }
+}
 
 export const getByUsername = query({
   args: { username: v.string() },
@@ -21,28 +49,7 @@ export const getByUsername = query({
       return null
     }
 
-    const avatarImageUrl = user.avatarImageId
-      ? await ctx.storage.getUrl(user.avatarImageId)
-      : null
-    const bannerImageUrl = user.bannerImageId
-      ? await ctx.storage.getUrl(user.bannerImageId)
-      : null
-
-    return {
-      _id: user._id,
-      name: user.name,
-      username: user.username,
-      email: user.email,
-      occupation: user.occupation,
-      mobileNumber: user.mobileNumber,
-      websiteLink: user.websiteLink,
-      addMobileToCard: user.addMobileToCard,
-      addWebsiteToCard: user.addWebsiteToCard,
-      avatarImageUrl,
-      bannerImageUrl,
-      description: user.description,
-      cardColor: user.cardColor,
-    }
+    return toPublicProfile(ctx, user)
   },
 })
 
