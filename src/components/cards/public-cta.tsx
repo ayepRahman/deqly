@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { Globe, Mail, Phone } from 'lucide-react'
 import { Button } from '~/components/ui/button'
+import { generateVCard } from '~/lib/vcard'
 import type { UserData } from './types'
 
 interface PublicCtaProps {
@@ -8,40 +9,18 @@ interface PublicCtaProps {
   showCreateDeck: boolean
 }
 
-function buildVCard(user: UserData): string {
-  const displayName = user.name || user.username || ''
-  const lines = [
-    'BEGIN:VCARD',
-    'VERSION:3.0',
-    `FN:${escapeVCardValue(displayName)}`,
-  ]
-  if (user.occupation) {
-    lines.push(`TITLE:${escapeVCardValue(user.occupation)}`)
-  }
-  if (user.email) {
-    lines.push(`EMAIL;TYPE=INTERNET:${escapeVCardValue(user.email)}`)
-  }
-  if (user.mobileNumber) {
-    lines.push(`TEL;TYPE=CELL:${escapeVCardValue(user.mobileNumber)}`)
-  }
-  if (user.websiteLink) {
-    lines.push(`URL:${escapeVCardValue(user.websiteLink)}`)
-  }
-  lines.push('END:VCARD')
-  return lines.join('\r\n')
-}
-
-function escapeVCardValue(value: string): string {
-  return value
-    .replace(/\\/g, '\\\\')
-    .replace(/\n/g, '\\n')
-    .replace(/,/g, '\\,')
-    .replace(/;/g, '\\;')
-}
-
 function downloadVCard(user: UserData) {
   if (typeof window === 'undefined') return
-  const vcard = buildVCard(user)
+  const vcard = generateVCard({
+    name: user.name,
+    email: user.email,
+    username: user.username,
+    occupation: user.occupation,
+    mobileNumber: user.mobileNumber,
+    websiteLink: user.websiteLink,
+    addMobileToCard: user.addMobileToCard,
+    addWebsiteToCard: user.addWebsiteToCard,
+  })
   const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
