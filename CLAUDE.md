@@ -22,9 +22,27 @@ npm run lint
 
 # Format
 npm run format
+
+# Run tests once (Vitest + convex-test)
+npm test
+
+# Watch tests
+npm run test:watch
 ```
 
 > Package manager is **pnpm** (v10). Use `pnpm` instead of `npm` when adding/removing packages.
+
+## Testing & TDD Workflow (MANDATORY)
+
+**Always write tests first and run integration tests before writing implementation code.** This is not optional — it applies to every feature, bugfix, and refactor.
+
+1. **TDD cycle (RED → GREEN → REFACTOR):**
+   - **RED** — write a failing test that describes the desired behavior first. Do not write implementation code before a test exists for it.
+   - **GREEN** — write the minimal implementation to make the test pass.
+   - **REFACTOR** — clean up while keeping tests green.
+2. **Backend (Convex) changes require integration tests** using `convex-test` + `vitest`, colocated in `convex/tests/`. Follow the existing patterns in `convex/tests/users.test.ts` and `convex/tests/connections.test.ts` (use `convexTest(schema)`, exercise the real query/mutation through `t.query`/`t.mutation`, assert against returned data).
+3. **Run `npm test` and `npm run lint` before declaring any task complete.** Never mark work done with failing or absent tests.
+4. **When a test fails, fix the implementation, not the test** — unless the test itself is provably wrong.
 
 ## Environment Variables
 
