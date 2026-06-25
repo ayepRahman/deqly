@@ -3,11 +3,12 @@
 import { convexQuery } from '@convex-dev/react-query'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useQuery } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import useEmblaCarousel from 'embla-carousel-react'
 import { Pencil } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { CardActions } from '~/components/cards/card-actions'
+import { SaveConnectionButton } from '~/components/connections/save-connection-button'
 import { LogoMask } from '~/components/cards/card-icons'
 import { ProfileCard } from '~/components/cards/profile-card'
 import { PublicCta } from '~/components/cards/public-cta'
@@ -113,6 +114,21 @@ function PublicProfile() {
     }
   }, [emblaApi, onSelect])
 
+  // Record that the logged-in viewer opened this Deqly (populates their
+  // Recently Viewed). Self-views are a server-side no-op; we also skip them
+  // client-side, and never call when unauthenticated (the mutation requires a
+  // session).
+  const recordView = useMutation(api.connections.recordView)
+  useEffect(() => {
+    if (
+      currentUser?._id &&
+      profileUser?._id &&
+      currentUser._id !== profileUser._id
+    ) {
+      recordView({ viewedUserId: profileUser._id }).catch(() => {})
+    }
+  }, [currentUser?._id, profileUser?._id, recordView])
+
   const profileUrl = getProfileUrl(profileUser?.username)
 
   const handleCopyLink = useCallback(async () => {
@@ -207,7 +223,7 @@ function PublicProfile() {
           {/* Header */}
           <div className="relative flex flex-col items-center mb-8">
             {isOwner && (
-              <Link to="/" className="absolute top-0 right-0">
+              <Link to="/edit" className="absolute top-0 right-0">
                 <Button variant="outline" size="sm" className="gap-1.5">
                   <Pencil className="w-3.5 h-3.5" />
                   Edit Deck
@@ -277,6 +293,12 @@ function PublicProfile() {
                   }`}
                 />
               ))}
+            </div>
+          )}
+
+          {currentUser && !isOwner && (
+            <div className="mt-4 flex justify-center">
+              <SaveConnectionButton savedUserId={profileUser._id} />
             </div>
           )}
 

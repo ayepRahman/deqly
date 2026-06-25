@@ -16,6 +16,7 @@ import { Route as UsernameRouteImport } from './routes/$username'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
+import { Route as AppEditRouteImport } from './routes/_app/edit'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -52,6 +53,11 @@ const AppProfileRoute = AppProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AppRoute,
 } as any)
+const AppEditRoute = AppEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => AppRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/edit': typeof AppEditRoute
   '/profile': typeof AppProfileRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -71,6 +78,7 @@ export interface FileRoutesByTo {
   '/$username': typeof UsernameRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/edit': typeof AppEditRoute
   '/profile': typeof AppProfileRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/': typeof AppIndexRoute
@@ -82,6 +90,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/_app/edit': typeof AppEditRoute
   '/_app/profile': typeof AppProfileRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/_app/': typeof AppIndexRoute
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/onboarding'
+    | '/edit'
     | '/profile'
     | '/auth/verify'
     | '/api/auth/$'
@@ -102,6 +112,7 @@ export interface FileRouteTypes {
     | '/$username'
     | '/login'
     | '/onboarding'
+    | '/edit'
     | '/profile'
     | '/auth/verify'
     | '/'
@@ -112,6 +123,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/onboarding'
+    | '/_app/edit'
     | '/_app/profile'
     | '/auth/verify'
     | '/_app/'
@@ -178,6 +190,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/edit': {
+      id: '/_app/edit'
+      path: '/edit'
+      fullPath: '/edit'
+      preLoaderRoute: typeof AppEditRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -189,11 +208,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppEditRoute: typeof AppEditRoute
   AppProfileRoute: typeof AppProfileRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppEditRoute: AppEditRoute,
   AppProfileRoute: AppProfileRoute,
   AppIndexRoute: AppIndexRoute,
 }

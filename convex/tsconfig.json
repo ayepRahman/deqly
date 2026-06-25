@@ -21,5 +21,8 @@
     "noEmit": true
   },
   "include": ["./**/*"],
-  "exclude": ["./_generated"]
+  /* Test files aren't Convex functions (never bundled) and use Vite's
+   * import.meta.glob; they're typechecked by the root tsconfig, which has
+   * vite/client types. */
+  "exclude": ["./_generated", "./tests/**"]
 }
