@@ -7,6 +7,7 @@ import type { UserData } from './types'
 interface PublicCtaProps {
   user: UserData
   showCreateDeck: boolean
+  isLoggedIn: boolean
 }
 
 function downloadVCard(user: UserData) {
@@ -41,7 +42,7 @@ function normalizeWebsite(url: string): string {
   return `https://${url}`
 }
 
-export function PublicCta({ user, showCreateDeck }: PublicCtaProps) {
+export function PublicCta({ user, showCreateDeck, isLoggedIn }: PublicCtaProps) {
   const hasPhone = Boolean(user.mobileNumber)
   const hasEmail = Boolean(user.email)
   const hasWebsite = Boolean(user.websiteLink)
@@ -97,10 +98,10 @@ export function PublicCta({ user, showCreateDeck }: PublicCtaProps) {
 
       {showCreateDeck && (
         <Link
-          to="/login"
+          to={isLoggedIn ? '/' : '/login'}
           className="text-black text-base font-semibold underline underline-offset-4 decoration-2"
         >
-          Create my own deck
+          {isLoggedIn ? 'Back to collection' : 'Create my own deck'}
         </Link>
       )}
     </div>

@@ -302,7 +302,11 @@ function PublicProfile() {
             </div>
           )}
 
-          <PublicCta user={userData} showCreateDeck={!isOwner} />
+          <PublicCta
+            user={userData}
+            showCreateDeck={!isOwner}
+            isLoggedIn={Boolean(currentUser)}
+          />
         </div>
       </div>
 
