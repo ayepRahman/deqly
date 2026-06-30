@@ -17,7 +17,7 @@ export function ConnectionRow({ profile }: ConnectionRowProps) {
         <img
           src={image}
           alt={displayName}
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover object-top"
         />
       ) : (
         <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-neutral-800" />

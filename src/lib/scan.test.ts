@@ -27,6 +27,15 @@ describe('parseDeqlyTarget', () => {
     expect(parseDeqlyTarget(text, ORIGIN)).toBe('/bob')
   })
 
+  it('resolves the profile link in a vCard that also carries an external website', () => {
+    const text = vcard([
+      'FN:Selene Juliana',
+      'URL:https://selene.example.com',
+      'URL;TYPE=PROFILE:https://deqly.com/selene',
+    ])
+    expect(parseDeqlyTarget(text, ORIGIN)).toBe('/selene')
+  })
+
   it('returns null for a vCard whose URL is an external website', () => {
     const text = vcard([
       'FN:Selene Juliana',

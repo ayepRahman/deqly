@@ -1,12 +1,13 @@
 import { Link } from '@tanstack/react-router'
 import { Globe, Mail, Phone } from 'lucide-react'
 import { Button } from '~/components/ui/button'
-import { generateVCard } from '~/lib/vcard'
+import { generateVCard, normalizeWebsiteUrl } from '~/lib/vcard'
 import type { UserData } from './types'
 
 interface PublicCtaProps {
   user: UserData
   showCreateDeck: boolean
+  isLoggedIn: boolean
 }
 
 function downloadVCard(user: UserData) {
@@ -20,6 +21,7 @@ function downloadVCard(user: UserData) {
     websiteLink: user.websiteLink,
     addMobileToCard: user.addMobileToCard,
     addWebsiteToCard: user.addWebsiteToCard,
+    origin: window.location.origin,
   })
   const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' })
   const url = URL.createObjectURL(blob)
@@ -36,12 +38,7 @@ function downloadVCard(user: UserData) {
   URL.revokeObjectURL(url)
 }
 
-function normalizeWebsite(url: string): string {
-  if (/^https?:\/\//i.test(url)) return url
-  return `https://${url}`
-}
-
-export function PublicCta({ user, showCreateDeck }: PublicCtaProps) {
+export function PublicCta({ user, showCreateDeck, isLoggedIn }: PublicCtaProps) {
   const hasPhone = Boolean(user.mobileNumber)
   const hasEmail = Boolean(user.email)
   const hasWebsite = Boolean(user.websiteLink)
@@ -73,7 +70,7 @@ export function PublicCta({ user, showCreateDeck }: PublicCtaProps) {
           )}
           {hasWebsite && user.websiteLink && (
             <a
-              href={normalizeWebsite(user.websiteLink)}
+              href={normalizeWebsiteUrl(user.websiteLink)}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`Visit ${user.name || user.username}'s website`}
@@ -97,10 +94,10 @@ export function PublicCta({ user, showCreateDeck }: PublicCtaProps) {
 
       {showCreateDeck && (
         <Link
-          to="/login"
+          to={isLoggedIn ? '/' : '/login'}
           className="text-black text-base font-semibold underline underline-offset-4 decoration-2"
         >
-          Create my own deck
+          {isLoggedIn ? 'Back to collection' : 'Create my own deck'}
         </Link>
       )}
     </div>

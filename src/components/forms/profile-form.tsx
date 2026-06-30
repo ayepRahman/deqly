@@ -179,7 +179,6 @@ export function ProfileForm({
             overlayLabel="Change banner"
             triggerClassName="h-full w-full rounded-none"
             badgeClassName="bottom-2 right-2"
-            contentAlign="end"
           >
             <img
               src={displayBannerUrl}
@@ -234,7 +233,8 @@ export function ProfileForm({
               isUploading={avatarUpload.isUploading}
               overlayLabel=""
               triggerClassName="absolute inset-0 h-full w-full rounded-full"
-              badgeClassName="bottom-0.5 right-0.5 p-1"
+              badgeClassName="bottom-0.5 right-0.5"
+              compact
             >
               <img
                 src={displayAvatarUrl}
