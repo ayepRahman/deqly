@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { Globe, Mail, Phone } from 'lucide-react'
 import { Button } from '~/components/ui/button'
-import { generateVCard } from '~/lib/vcard'
+import { generateVCard, normalizeWebsiteUrl } from '~/lib/vcard'
 import type { UserData } from './types'
 
 interface PublicCtaProps {
@@ -21,6 +21,7 @@ function downloadVCard(user: UserData) {
     websiteLink: user.websiteLink,
     addMobileToCard: user.addMobileToCard,
     addWebsiteToCard: user.addWebsiteToCard,
+    origin: window.location.origin,
   })
   const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' })
   const url = URL.createObjectURL(blob)
@@ -35,11 +36,6 @@ function downloadVCard(user: UserData) {
   anchor.click()
   document.body.removeChild(anchor)
   URL.revokeObjectURL(url)
-}
-
-function normalizeWebsite(url: string): string {
-  if (/^https?:\/\//i.test(url)) return url
-  return `https://${url}`
 }
 
 export function PublicCta({ user, showCreateDeck, isLoggedIn }: PublicCtaProps) {
@@ -74,7 +70,7 @@ export function PublicCta({ user, showCreateDeck, isLoggedIn }: PublicCtaProps) 
           )}
           {hasWebsite && user.websiteLink && (
             <a
-              href={normalizeWebsite(user.websiteLink)}
+              href={normalizeWebsiteUrl(user.websiteLink)}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`Visit ${user.name || user.username}'s website`}

@@ -7,6 +7,10 @@ export interface VCardInput {
   websiteLink?: string
   addMobileToCard?: boolean
   addWebsiteToCard?: boolean
+  // Base URL used to build the public-profile link (e.g. "https://deqly.com").
+  // Passed in explicitly so the card is identical under SSR and in tests, where
+  // `window` is unavailable. Falls back to the browser origin when omitted.
+  origin?: string
 }
 
 // vCard 3.0 (RFC 2426) requires CRLF line breaks. Apple Contacts (iPhone)
@@ -36,6 +40,23 @@ function buildStructuredName(name: string): string {
   return `${escapeText(family)};${escapeText(given)};;;`
 }
 
+// A stored website link may omit the scheme (e.g. "selene.example.com"). A
+// vCard URL value must be an absolute URI, and contact apps won't make it
+// tappable otherwise — so default a missing scheme to https.
+export function normalizeWebsiteUrl(url: string): string {
+  const trimmed = url.trim()
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+  return `https://${trimmed}`
+}
+
+function resolveOrigin(input: VCardInput): string | undefined {
+  if (input.origin) return input.origin
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin
+  }
+  return undefined
+}
+
 export function generateVCard(input: VCardInput): string {
   const displayName = input.name?.trim() || input.username?.trim() || ''
   const lines: string[] = ['BEGIN:VCARD', 'VERSION:3.0']
@@ -56,12 +77,18 @@ export function generateVCard(input: VCardInput): string {
     lines.push(`TEL;TYPE=CELL:${input.mobileNumber}`)
   }
 
-  // Emit a single URL. Prefer the user's own website; fall back to the public
-  // profile. Multiple URL properties are parsed inconsistently across devices.
+  // Emit both links the contact may want: the user's own website (plain URL)
+  // and the Deqly public profile (tagged TYPE=PROFILE so scanners and contact
+  // apps can tell them apart). Both iOS and Android import multiple URL
+  // properties fine; the earlier single-URL limitation dropped whichever link
+  // wasn't chosen, so a card with a website never carried the profile link.
   if (input.websiteLink && input.addWebsiteToCard) {
-    lines.push(`URL:${input.websiteLink}`)
-  } else if (input.username && typeof window !== 'undefined') {
-    lines.push(`URL:${window.location.origin}/${input.username}`)
+    lines.push(`URL:${normalizeWebsiteUrl(input.websiteLink)}`)
+  }
+
+  const origin = resolveOrigin(input)
+  if (input.username && origin) {
+    lines.push(`URL;TYPE=PROFILE:${origin}/${input.username}`)
   }
 
   lines.push('END:VCARD')

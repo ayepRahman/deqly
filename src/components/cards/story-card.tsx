@@ -81,6 +81,8 @@ export function StoryCard({
       websiteLink: userData.websiteLink,
       addMobileToCard: userData.addMobileToCard,
       addWebsiteToCard: userData.addWebsiteToCard,
+      origin:
+        typeof window !== 'undefined' ? window.location.origin : undefined,
     })
   }, [userData])
 
@@ -283,6 +285,8 @@ export function StoryCard({
             vCardData={vCardData}
             cardColor={accentColor}
             onClose={onCloseFlip ?? (() => {})}
+            name={userData?.name}
+            occupation={userData?.occupation}
           />
         }
       />
